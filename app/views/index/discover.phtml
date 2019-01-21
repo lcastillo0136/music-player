@@ -1,0 +1,59 @@
+<div id="discover-container">
+  <a href="#" class="pull-right text-muted m-t" data-toggle="class:fa-spin" v-on:click.stop.prevent="refresh">
+    <i class="icon-refresh i-lg inline" id="refresh"></i>
+  </a> 
+                  
+  <h2 class="font-thin m-b">
+    Discover 
+    <span class="musicbar animate inline m-l-sm" style="width:20px;height:20px"> 
+      <span class="bar1 a1 bg-primary lter"></span> 
+      <span class="bar2 a2 bg-info lt"></span> 
+      <span class="bar3 a3 bg-success"></span> 
+      <span class="bar4 a4 bg-warning dk"></span> 
+      <span class="bar5 a5 bg-danger dker"></span> 
+    </span>
+  </h2>
+  <div class="row row-sm">
+    <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2" v-for="(s,si) in discoverSongs" v-key="si" v-if="si < 12" v-bind:class="{'col-0':si%6==0}">
+      <div class="item">
+        <div class="pos-rlt">
+          <div class="bottom"> <span class="badge bg-info m-l-sm m-b-sm">{{s.duration|durationMin}}</span> </div>
+          <div class="item-overlay opacity r r-2x bg-black" v-bind:class="{'active': s.playing}">
+            <div class="text-info padder m-t-sm text-sm"> 
+              <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 1}"></i> 
+              <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 2}"></i> 
+              <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 3}"></i> 
+              <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 4}"></i> 
+              <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 5}"></i> 
+            </div>
+            <div class="center text-center m-t-n"> 
+              <a href="#" v-on:click.stop.prevent="playSong(s)">
+                <i class="icon-control-play i-2x" v-if="!s.playing"></i>
+                <i class="icon-control-pause i-2x" v-if="s.playing"></i>
+              </a> 
+            </div>
+            <div class="bottom padder m-b-sm"> 
+              <a href="#" v-on:click.stop.prevent="likeSong(s)" class="pull-right"> 
+                <i class="fa" v-bind:class="{'fa-heart-o': s.like == 0, 'fa-heart': s.like ==1}"></i> 
+              </a> 
+              <a href="#" v-on:click.stop.prevent="playSong(s, false)"> 
+                <i class="fa fa-plus-circle"></i> 
+              </a> 
+            </div>
+          </div> 
+          <a href="#" style="overflow: hidden;display: block;">
+            <img src="/img/p1.jpg" alt="" class="r r-2x img-full" v-bind:class="{'hide': (s.albumurl && s.albumurl != '')}">
+            <img v-bind:src="s.albumurl" onerror="this.src='/img/p1.jpg';this.style='';" alt="" class="r r-2x img-full" style="height: 359px;width: auto;margin-left: -25%;" v-bind:class="{'hide': (s.albumurl == '' || !s.albumurl)}">
+          </a>
+        </div>
+        <div class="padder-v"> 
+          <a :href="'/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
+          <a href="#" class="text-ellipsis text-xs text-muted">{{s.tags.band}}</a> 
+        </div>
+      </div>
+    </div>
+
+    <!-- EVERY 2-->
+    <div class="clearfix visible-xs"></div>
+  </div>
+</div>

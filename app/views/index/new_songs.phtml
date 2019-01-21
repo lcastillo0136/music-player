@@ -1,0 +1,46 @@
+<div class="row">
+  <div class="col-md-7"> 
+    <h3 class="font-thin">New Songs</h3>
+    <div class="row row-sm">
+      <div class="col-xs-6 col-sm-3" v-for="(s,si) in newSongs" v-key="si" v-if="si < 8">
+        <div class="item">
+          <div class="pos-rlt">
+            <div class="item-overlay opacity r r-2x bg-black" v-bind:class="{'active': s.playing}">
+              <div class="center text-center m-t-n"> 
+                <a href="#"  v-on:click.stop.prevent="playSong(s)">
+                  <i class="fa fa-play-circle i-2x" v-if="!s.playing"></i>
+                  <i class="fa fa-pause i-2x" v-if="s.playing"></i>
+                </a> 
+              </div>
+            </div> 
+            <a v-bind:href="'/songs/'+s.id">
+              <img src="/img/a2.png" alt="" class="r r-2x img-full" v-bind:class="{'hide': (s.albumurl && s.albumurl != '')}">
+              <img v-bind:src="s.albumurl"  onerror="this.src='/img/a2.png';" alt="" class="r r-2x img-full" v-bind:class="{'hide': (s.albumurl == '' || !s.albumurl)}">
+            </a>
+          </div>
+          <div class="padder-v"> 
+            <a v-bind:href="'/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
+            <a v-bind:href="'/songs/'+s.id" class="text-ellipsis text-xs text-muted">{{s.tags.band}}</a> 
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-5"> 
+    <h3 class="font-thin">Top Songs</h3>
+    <div class="list-group bg-white list-group-lg no-bg auto" > 
+      <a v-bind:href="'/songs/'+s.id" class="list-group-item clearfix" v-for="(s,si) in topSongs" v-key="si" v-if="si < 10" v-bind:class="{'active': s.playing}"> 
+        <span class="pull-right h2 text-muted m-l">{{s.no_plays}}</span> 
+        <span class="pull-left thumb-sm avatar m-r"  v-on:click.stop.prevent="playSong(s)"> 
+          <img src="/img/a4.png" alt="" v-bind:class="{'hide': (s.albumurl && s.albumurl != '')}">
+          <img v-bind:src="s.albumurl" onerror="this.src='/img/a4.png';" alt="" v-bind:class="{'hide': (s.albumurl == '' || !s.albumurl)}">
+        </span> 
+        <span class="clear"> 
+          <span>{{s.filename}}</span> 
+          <small class="text-muted clear text-ellipsis">by {{s.tags.band}}</small> 
+        </span> 
+      </a> 
+       
+    </div>
+  </div>
+</div>

@@ -1,0 +1,84 @@
+<template id="music-player-template">
+  <div id="jp_container_N"> 
+    <div class="jp-type-playlist"> 
+      <div id="jplayer_N" class="jp-jplayer hide"></div> 
+      <div class="jp-gui"> 
+        <div class="jp-video-play hide"> 
+          <a class="jp-video-play-icon">play</a> 
+        </div> 
+        <div class="jp-interface"> 
+          <div class="jp-controls"> 
+            <div>
+              <a class="jp-previous" v-bind:class="{'icon-muted': playlist.length < 2 || current <= 0 || current === false}" v-on:click.stop.prevent="previous">
+                <i class="icon-control-rewind i-lg"></i>
+              </a>
+            </div> 
+            <div> 
+              <a class="jp-play" v-on:click.stop.prevent="play">
+                <i class="icon-control-play i-2x" v-bind:class="{'icon-control-pause': isPlaying, 'icon-muted': playlist.length < 1}"></i>
+              </a>
+            </div> 
+            <div>
+              <a class="jp-next"  v-bind:class="{'icon-muted': playlist.length < 2 || current >= (playlist.length -1) || current === false}" v-on:click.stop.prevent="next">
+                <i class="icon-control-forward i-lg"></i>
+              </a>
+            </div> 
+            <div class="hide"><a class="jp-stop"><i class="fa fa-stop"></i></a></div> 
+            <div><a class="" data-toggle="dropdown" data-target="#playlist" v-bind:class="{'icon-muted': playlist.length==0 }"><i class="icon-list"></i></a></div> 
+            <div class="jp-progress hidden-xs"> 
+              <div class="jp-seek-bar dk" v-on:mousedown.stop.prevent="selectedTime($event)"> 
+                <div class="jp-play-bar bg-info" v-bind:style="{'width': (isPlaying ? baridth : 0)+'%'}"> </div> 
+                <div class="jp-title text-lt" v-if="isPlaying"> 
+                  <ul> 
+                    <li>{{song.title}} <span class='jp-artist'>by {{song.artist}}</span></li> 
+                  </ul> 
+                </div> 
+              </div> 
+            </div> 
+            <div class="hidden-xs hidden-sm jp-current-time text-xs text-muted">{{currentTime|durationMin}}</div> 
+            <div class="hidden-xs hidden-sm jp-duration text-xs text-muted">{{duration|durationMin}}</div> 
+            <div class="hidden-xs hidden-sm"> 
+              <a class="jp-mute" v-bind:title="!muted ? 'mute' : 'unmute'" v-on:click.stop.prevent="mute(!muted)">
+                <i class="icon-volume-2" v-bind:class="{'icon-volume-off': muted}"></i>
+              </a>
+            </div> 
+            <div class="hidden-xs hidden-sm jp-volume"> 
+              <div class="jp-volume-bar dk" v-on:mousedown.stop.prevent="selectVolume($event)"> 
+                <div class="jp-volume-bar-value lter" v-bind:style="{'width': (volume * 100) + '%'}"></div> 
+              </div> 
+            </div> 
+            <div> 
+              <a class="jp-shuffle" title="shuffle" v-on:click.stop.prevent="setShuffle"><i class="icon-shuffle " v-bind:class="{'text-muted': !shuffle, 'text-lt': shuffle}"></i></a> 
+              <a class="jp-shuffle-off hid" title="shuffle off"><i class="icon-shuffle text-lt"></i></a> 
+            </div> 
+            <div> 
+              <a class="jp-repeat" title="repeat" v-on:click.stop.prevent="setRepeat"><i class="icon-loop " v-bind:class="{'text-muted': !repeat, 'text-lt': repeat}"></i></a> 
+            </div> 
+            <div> 
+              <a class="" title="Clean List" v-on:click.stop.prevent="cleanList"><i class="icon-trash" v-bind:class="{'text-muted': playlist.length==0, 'text-lt': playlist.length>0}"></i></a> 
+            </div> 
+            <div class="hide"> 
+              <a class="jp-full-screen" title="full screen"><i class="fa fa-expand"></i></a> 
+              <a class="jp-restore-screen" title="restore screen"><i class="fa fa-compress text-lt"></i></a> 
+            </div> 
+          </div> 
+        </div> 
+      </div> 
+      <div class="jp-playlist dropup" id="playlist" v-if="playlist.length>0"> 
+        <ul class="dropdown-menu aside-xl dker"> 
+          <li v-for="(p,pi) in playlist">
+            <div>
+              <a href="#" class="jp-playlist-item-remove" v-on:click.stop.prevent="remove(pi)">&times;</a>
+              <a href="#" class="jp-playlist-item" tabindex="1" v-on:click.stop.prevent="select(pi)" v-bind:class="{'jp-playlist-current': p.song.playing}"> 
+                {{p.title}} <span class='jp-artist'>by {{p.artist}}</span>
+              </a>
+            </div>
+          </li>
+        </ul> 
+      </div> 
+      <div class="jp-no-solution hide"> 
+        <span>Update Required</span> To play the media you will need to either update your browser to a recent version or update your <a href="http://get.adobe.com/flashplayer/" target="_blank">Flash plugin</a>. 
+      </div> 
+    </div> 
+  </div>
+</template>

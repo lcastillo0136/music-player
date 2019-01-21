@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<!-- saved from url=(0043)http://flatfull.com/themes/musik/index.html -->
+<html lang="en" class="app js no-touch no-android chrome no-firefox no-iemobile no-ie no-ie8 no-ie10 no-ie11 no-ios no-ios7 ipad">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Musik | Web Application</title>
+    <meta name="description" content="app, web app, responsive, admin dashboard, admin, flat, flat ui, ui kit, off screen nav">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="/css/jplayer.flat.css" type="text/css">
+
+    <link rel="stylesheet" href="/css/app.v1.css" type="text/css">
+    <link rel="stylesheet" href="/css/chosen.css" type="text/css">
+    <link rel="stylesheet" href="/css/sweetalert.css" type="text/css">
+    <script type="text/javascript">
+      /*/ console.error = function() {return false};*/
+      console.groupCollapsed("Loading Page");
+
+    </script>
+    <script src="/js/axios.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-2.1.1.js"></script>
+    <script type="text/javascript" src="/js/Bootstrap.min.js"></script>
+    <script src="/js/plugins/chosen.jquery.js"></script>
+    <script src="/js/jquery.jplayer.min.js"></script>
+    <script src="/js/jplayer.playlist.min.js"></script>
+    <script src="/js/plugins/sweetalert2.min.js"></script>
+
+    <script type="text/javascript" src="/js/vue.js"></script>
+    <script src="/js/components/star-rating.min.js"></script>
+
+    <?php $this->partial('components/music-player'); ?>
+
+    <script type="text/javascript" src="/js/demo.js"></script>
+    <!--[if lt IE 9]> <script src="js/ie/html5shiv.js"></script> <script src="js/ie/respond.min.js"></script> <script src="js/ie/excanvas.js"></script> <![endif]-->
+  </head>
+
+  <body >
+    <section class="vbox">
+      <?php $this->partial('layouts/header'); ?>
+      <?php echo $this->getContent(); ?>
+    </section> <!-- Bootstrap -->
+    <!-- App -->
+    <script type="text/javascript">setTimeout(console.groupEnd, 2000)</script>
+  </body>
+</html>
+      
