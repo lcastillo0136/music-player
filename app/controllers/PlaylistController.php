@@ -35,6 +35,16 @@ class PlaylistController extends ControllerBase {
     $this->view->data = $song_data;
     $this->view->musicFolder = addslashes(realpath($this->config->application->musicFolder));
 
+    $sendback_response = array("success"=>false);
+
+    $sendback_response["info"] = $infoSong;
+    $sendback_response["tags"] = $tags_result;
+    $sendback_response["data"] = $song_data;
+    $sendback_response["musicFolder"] = realpath($this->config->application->musicFolder);
+    $sendback_response["success"] = true;
+
+    echo json_encode($sendback_response);
+    die();
   }
 
   public function deleteSongAction($id) {

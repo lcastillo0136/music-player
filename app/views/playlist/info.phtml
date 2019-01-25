@@ -1,328 +1,170 @@
-  <section>
-    <section class="hbox stretch"> 
-      <?php $this->partial('layouts/left_menu'); ?>
-      <section id="infoSongContent">
+<template id="song-info-template">
+  <section class="scrollable"  v-bind:class="{'w-f-md': player.available}" v-if="song" >
+    <section class="hbox stretch">
+      <aside class="aside-lg">
         <section class="vbox">
-          <section class="scrollable"  v-bind:class="{'w-f-md': player.available}" >
-            <section class="hbox stretch">
-              <aside class="aside-lg">
-                <section class="vbox">
-                  <section class="scrollable">
-                    <div class="wrapper">
-                      <div class="text-center m-b m-t">
-                        <a href="#" class="" v-bind:class="{'hide': song.albumurl == ''}">
-                          <img v-bind:src="song.albumurl" class="" style="width: 100%;">
-                        </a>
-                        <div>
-                          <div class="h3 m-t-xs m-b-xs">{{song.name}}</div>
-                          <small class="text-muted">
-                            <i class="fa fa-music"></i>
-                            {{song.artist}}
-                          </small>
-                        </div>
-                      </div>
-                      <div class="panel wrapper">
-                        <div class="row text-center">
-                          <div class="col-xs-6">
-                            <a href="#">
-                              <span class="m-b-xs h4 block">{{song.no_plays}}</span>
-                              <small class="text-muted">Plays</small>
-                            </a>
-                          </div>
-                          <div class="col-xs-6">
-                            <a href="#">
-                              <span class="m-b-xs h4 block">{{song.rating}}</span>
-                              <small class="text-muted">Rating</small>
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="btn-group btn-group-justified m-b">
-                        <a class="btn btn-info btn-rounded" v-on:click.stop.prevent="song.like=!(song.like == '1')" >
-                          <span class="text">
-                            <i class="text-danger fa" v-bind:class="{'fa-heart-o': !song.like, 'fa-heart': song.like}"></i>
-                            Like 
-                          </span>
-                        </a>
-                        <a class="btn bg-primary lt btn-rounded" v-on:click.stop.prevent="playSong(globalSong)" >
-                          <i class="fa" v-bind:class="{'fa-pause': globalSong.playing, 'fa-play': !globalSong.playing}"></i>
-                          Play 
-                        </a>
-                      </div>
-                      <div>
-                        <small class="text-uc text-xs text-muted">Artist</small>
-                        <p>{{song.artist}}</p>
-                        <small class="text-uc text-xs text-muted">Album</small>
-                        <p>{{song.album}}</p>
-                        <small class="text-uc text-xs text-muted">Genre</small>
-                        <p>{{song.genre}}</p>
-                        <small class="text-uc text-xs text-muted">Duration</small>
-                        <p>{{song.duration|durationMin}}</p>
-                        <small class="text-uc text-xs text-muted">Size</small>
-                        <p>{{song.size|filesize}}</p>
-                        <small class="text-uc text-xs text-muted" v-if="song.tags">Tags</small>
-                        <p>
-                          <a v-for="t in (song.tags||'').split(',')" class="badge m-r-xs" v-bind:href="'/songs/tags/'+t" v-if="t">#{{t}}</a>
-                        </p>
-                        <small class="text-uc text-xs text-muted">Path</small>
-                        <p>{{path}}</p>
-                        
-                        <div class="line"></div>
+          <section class="scrollable">
+            <div class="wrapper">
+              <div class="text-center m-b m-t">
+                <a href="#" class="" v-bind:class="{'hide': song.albumurl == ''}">
+                  <img v-bind:src="song.albumurl" class="" style="width: 100%;">
+                </a>
+                <div>
+                  <div class="h3 m-t-xs m-b-xs">{{song.name}}</div>
+                  <small class="text-muted">
+                    <i class="fa fa-music"></i>
+                    {{song.artist}}
+                  </small>
+                </div>
+              </div>
+              <div class="panel wrapper">
+                <div class="row text-center">
+                  <div class="col-xs-6">
+                    <a href="#">
+                      <span class="m-b-xs h4 block">{{song.no_plays}}</span>
+                      <small class="text-muted">Plays</small>
+                    </a>
+                  </div>
+                  <div class="col-xs-6">
+                    <a href="#">
+                      <span class="m-b-xs h4 block">{{song.rating}}</span>
+                      <small class="text-muted">Rating</small>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div class="btn-group btn-group-justified m-b">
+                <a class="btn btn-info btn-rounded" v-on:click.stop.prevent="song.like=!(song.like == '1')" >
+                  <span class="text">
+                    <i class="text-danger fa" v-bind:class="{'fa-heart-o': !song.like, 'fa-heart': song.like}"></i>
+                    Like 
+                  </span>
+                </a>
+                <a class="btn bg-primary lt btn-rounded" v-on:click.stop.prevent="playSong(globalSong)" >
+                  <i class="fa" v-bind:class="{'fa-pause': globalSong.playing, 'fa-play': !globalSong.playing}"></i>
+                  Play 
+                </a>
+              </div>
+              <div>
+                <small class="text-uc text-xs text-muted">Artist</small>
+                <p>{{song.artist}}</p>
+                <small class="text-uc text-xs text-muted">Album</small>
+                <p>{{song.album}}</p>
+                <small class="text-uc text-xs text-muted">Genre</small>
+                <p>{{song.genre}}</p>
+                <small class="text-uc text-xs text-muted">Duration</small>
+                <p>{{song.duration|durationMin}}</p>
+                <small class="text-uc text-xs text-muted">Size</small>
+                <p>{{song.size|filesize}}</p>
+                <small class="text-uc text-xs text-muted" v-if="song.tags">Tags</small>
+                <p>
+                  <a v-for="t in (song.tags||'').split(',')" class="badge m-r-xs" v-bind:href="'/songs/tags/'+t" v-if="t">#{{t}}</a>
+                </p>
+                <small class="text-uc text-xs text-muted">Path</small>
+                <p>{{path}}</p>
+                
+                <div class="line"></div>
 
-                        <button type="submit" class="btn btn-sm btn-primary" v-on:click.stop.prevent="saveSongInfo" v-bind:diabled="status=='loading'">
-                          <i class="fa fa-save" v-if="status!=='loading'"></i>
-                          <i class="fa fa-spin fa-spinner" v-if="status=='loading'"></i>
-                          &nbsp;&nbsp;&nbsp;Save Changes
-                        </button>
-                        <ul class="parsley-error-list" v-if="status && status !='loading'">
-                          <li class="required" style="display: list-item;">{{status}}</li>
-                        </ul>
+                <button type="submit" class="btn btn-sm btn-primary" v-on:click.stop.prevent="saveSongInfo" v-bind:diabled="status=='loading'">
+                  <i class="fa fa-save" v-if="status!=='loading'"></i>
+                  <i class="fa fa-spin fa-spinner" v-if="status=='loading'"></i>
+                  &nbsp;&nbsp;&nbsp;Save Changes
+                </button>
+                <ul class="parsley-error-list" v-if="status && status !='loading'">
+                  <li class="required" style="display: list-item;">{{status}}</li>
+                </ul>
 
-                      </div>
-                    </div>
-                  </section>
-                </section>
-              </aside>
-              <aside class="">
-                <section class="vbox">
-                  <section class="scrollable padder">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <section class="panel panel-default"> 
-                          <header class="panel-heading font-bold">Song info</header> 
-                          <div class="panel-body"> 
-                            <form role="form"> 
-                              <div class="form-group"> 
-                                <label>Name</label> 
-                                <input type="text" class="form-control" placeholder="" v-model="song.name" v-on:blur="findData"/> 
-                              </div>
-                              <div class="form-group" v-bind:class="{'open': showlist.artist && artistFilter.length>0}"> 
-                                <label>Artist</label> 
-                                <input type="text" class="form-control" placeholder="" v-model="song.artist" v-on:blur="findData" v-on:keyup="showlist.artist=true"> 
-                                <ul class="dropdown-menu" v-if="showlist.artist && artistFilter.length>0"> 
-                                  <li v-for="(a,index) in artistFilter" v-if="index<50 ">
-                                    <a href="#" v-on:click.stop.prevent="song.artist = a;showlist.artist=false" v-on:focus="showlist.artist=true"  v-on:blur="showlist.artist=false" v-on:keydown.enter="song.artist = a;showlist.artist=false">{{a}}</a>
-                                  </li>
-                                </ul>
-                              </div>
-                              <div class="form-group"> 
-                                <label>Album</label> 
-                                <input type="text" class="form-control" placeholder="" v-model="song.album"> 
-                              </div>
-                              <div class="form-group" v-bind:class="{'open': showlist.genres && genresFilter.length>0}"> 
-                                <label>Genre</label> 
-                                <input type="text" class="form-control" placeholder="" v-model="song.genre" v-on:blur="showlist.genres=false" v-on:keyup="showlist.genres=true"> 
-                                <ul class="dropdown-menu" v-if="showlist.genres && genresFilter.length>0"> 
-                                  <li v-for="(g,index) in genresFilter" v-if="index<50">
-                                    <a href="#" v-on:click.stop.prevent="song.genre =g;showlist.genres=false"  v-on:focus="showlist.genres=true"   v-on:blur="showlist.genres=false" v-on:keydown.enter="song.genre = g;showlist.genres=false">{{g}}</a>
-                                  </li>
-                                </ul>
-                              </div>
-                              <div class="form-group"> 
-                                <label>No. Track</label> 
-                                <input type="number" min="0" class="form-control" placeholder="" v-model="song.track_number"> 
-                              </div>
-                            </form>
-                          </div> 
-                        </section>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <section class="panel panel-default"> 
-                          <header class="panel-heading font-bold">More info</header> 
-                          <div class="panel-body"> 
-                            <form role="form"> 
-                              <div class="checkbox i-checks"> 
-                                <label> 
-                                  <input type="checkbox" v-model="song.like"><i></i> Like 
-                                </label> 
-                              </div>
-                              <div class="form-group">
-                                <label>Tags</label>
-                                <select multiple class="form-control chosen-select"> 
-                                  <option v-bind:value="t.tag" v-for="t in tags" v-key="t" v-bind:selected="(song.tags||'').split(',').includes(t.tag)">{{t.tag}}</option>
-                                </select>
-                              </div>
-                              <div class="form-group"> 
-                                <label>Rating</label> 
-                                <star-rating :star-size="20" :increment="0.05" :show-rating="false" v-model="song.rating"></star-rating> 
-                              </div>
-                              <div class="form-group"> 
-                                
-                              </div>
-
-                            </form>
-                          </div> 
-                        </section>
-                      </div>
-                    </div>
-                  </section>
-                </section>
-              </aside>
-              <aside class="col-lg-3 b-l">
-                <section class="vbox">
-                  <section class="scrollable padder-v">
-                    <label>Lyrics</label> 
-                    <textarea v-model="song.lyrics" style="height: 100%;" class="form-control" ></textarea>
-                  </section>
-                </section>
-              </aside>
-            </section>
+              </div>
+            </div>
           </section>
-
-          <?php $this->partial('layouts/song_player'); ?>
         </section>
-      </section>
+      </aside>
+      <aside class="">
+        <section class="vbox">
+          <section class="scrollable padder">
+            <div class="row">
+              <div class="col-md-12">
+                <section class="panel panel-default"> 
+                  <header class="panel-heading font-bold">Song info</header> 
+                  <div class="panel-body"> 
+                    <form role="form"> 
+                      <div class="form-group"> 
+                        <label>Name</label> 
+                        <input type="text" class="form-control" placeholder="" v-model="song.name" v-on:blur="findData"/> 
+                      </div>
+                      <div class="form-group" v-bind:class="{'open': showlist.artist && artistFilter.length>0}"> 
+                        <label>Artist</label> 
+                        <input type="text" class="form-control" placeholder="" v-model="song.artist" v-on:blur="findData" v-on:keyup="showlist.artist=true"> 
+                        <ul class="dropdown-menu" v-if="showlist.artist && artistFilter.length>0"> 
+                          <li v-for="(a,index) in artistFilter" v-if="index<50 ">
+                            <a href="#" v-on:click.stop.prevent="song.artist = a;showlist.artist=false" v-on:focus="showlist.artist=true"  v-on:blur="showlist.artist=false" v-on:keydown.enter="song.artist = a;showlist.artist=false">{{a}}</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div class="form-group"> 
+                        <label>Album</label> 
+                        <input type="text" class="form-control" placeholder="" v-model="song.album"> 
+                      </div>
+                      <div class="form-group" v-bind:class="{'open': showlist.genres && genresFilter.length>0}"> 
+                        <label>Genre</label> 
+                        <input type="text" class="form-control" placeholder="" v-model="song.genre" v-on:blur="showlist.genres=false" v-on:keyup="showlist.genres=true"> 
+                        <ul class="dropdown-menu" v-if="showlist.genres && genresFilter.length>0"> 
+                          <li v-for="(g,index) in genresFilter" v-if="index<50">
+                            <a href="#" v-on:click.stop.prevent="song.genre =g;showlist.genres=false"  v-on:focus="showlist.genres=true"   v-on:blur="showlist.genres=false" v-on:keydown.enter="song.genre = g;showlist.genres=false">{{g}}</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div class="form-group"> 
+                        <label>No. Track</label> 
+                        <input type="number" min="0" class="form-control" placeholder="" v-model="song.track_number"> 
+                      </div>
+                    </form>
+                  </div> 
+                </section>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-12">
+                <section class="panel panel-default"> 
+                  <header class="panel-heading font-bold">More info</header> 
+                  <div class="panel-body"> 
+                    <form role="form"> 
+                      <div class="checkbox i-checks"> 
+                        <label> 
+                          <input type="checkbox" v-model="song.like"><i></i> Like 
+                        </label> 
+                      </div>
+                      <div class="form-group">
+                        <label>Tags</label>
+                        <select multiple class="form-control chosen-select"> 
+                          <option v-bind:value="t.tag" v-for="t in tags" v-key="t" v-bind:selected="(song.tags||'').split(',').includes(t.tag)">{{t.tag}}</option>
+                        </select>
+                      </div>
+                      <div class="form-group"> 
+                        <label>Rating</label> 
+                        <star-rating :star-size="20" :increment="0.05" :show-rating="false" v-model="song.rating"></star-rating> 
+                      </div>
+                      <div class="form-group"> 
+                        
+                      </div>
+
+                    </form>
+                  </div> 
+                </section>
+              </div>
+            </div>
+          </section>
+        </section>
+      </aside>
+      <aside class="col-lg-3 b-l">
+        <section class="vbox">
+          <section class="scrollable padder-v">
+            <label>Lyrics</label> 
+            <textarea v-model="song.lyrics" style="height: 100%;" class="form-control" ></textarea>
+          </section>
+        </section>
+      </aside>
     </section>
   </section>
-   
-  <script type="text/javascript">
-    var infoSongContentVue = new Vue({
-      mixins: [mixin],
-      el: '#infoSongContent',
-      data: {
-        player: {
-          available: true
-        },
-        song: <?=json_encode($song)?>,
-        lyrics: [],
-        tags: <?=json_encode($tags)?>,
-        showlist: {
-          artist: false,
-          genres: false
-        },
-        status: false
-      },
-      watch: {
-        song: {
-          deep:true,
-          handler: function() {
-            this.song.file_path = '<?=$musicFolder?>\\' + this.song.artist.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.album.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.artist + ' - ' + this.song.track_number + ' - ' +this.song.name + (this.song.name.indexOf('.mp3') > -1 ? '' : '.mp3');
-          }
-        }
-      },
-      computed: {
-        path: function() {
-          return this.song.file_path;
-        },
-        artistFilter: function() {
-          var that = this;
-          return this.state.artists.filter((a)=>{
-            return that.clearFilter(a).indexOf(that.clearFilter(that.song.artist)) > -1 && that.clearFilter(that.song.artist) != that.clearFilter(a);
-          });
-        },
-        genresFilter: function() {
-          var that = this;
-          return this.state.genres.filter((a)=>{
-            return that.clearFilter(a).indexOf(that.clearFilter(that.song.genre)) > -1 && that.clearFilter(that.song.genre) != that.clearFilter(a);
-          });
-        },
-        globalSong: function() {
-          const that = this;
-          return this.songs.find(f=>f.id == that.song.id)||{playing:false};
-        }
-      },
-      methods: {
-        saveSongInfo: function() {
-          var that = this;
-          this.status  = 'loading';
-          axios.put('/songs/<?=$song->id?>/', {
-            name: that.song.name,
-            artist: that.song.artist,
-            album: that.song.album,
-            genre: that.song.genre,
-            no_track: that.song.track_number,
-            like: that.song.like,
-            tags: that.song.tags,
-            rating: that.song.rating,
-            lyrics: that.song.lyrics,
-            path: that.song.file_path,
-            albumurl: that.song.albumurl
-          }).then(function (response) {
-            if (response.data.success) {
-              that.status = '';
-            } else if (response.data.message && response.data.message != '') {
-              that.status = response.data.message;
-            }
-          }).catch(function (error) {});
-        },
-        selectTags: function(v) {
-          this.song.tags = $(v.target.selectedOptions).map((i,e)=> $(e).val()).toArray().join(',');
-        },
-        findData: function() {
-          var that = this;
-          this.showlist.artist = false;
-          if (this.song.artist != '' && this.song.name != '') {
-            axios.get('http://ws.audioscrobbler.com/2.0/', {
-              params: {
-                "method": "track.getInfo",
-                "api_key": "ed3f6345c0413625687fdb95191bb452",
-                "artist": this.song.artist,
-                "track": this.song.name,
-                "format": "json",
-                "autocorrect": 1
-              }
-            }).then((r)=>{
-              if (r.data.track) {
-                if (that.song.artist != r.data.track.artist.name) {
-                  that.song.artist = r.data.track.artist.name;
-                }
-                if (that.song.name != r.data.track.name) {
-                  that.song.name = r.data.track.name;
-                }
-                if (r.data.track.album && that.song.album != r.data.track.album.title) {
-                  that.song.album = r.data.track.album.title;
-                }
-              }
-            }).catch((e)=>{
-              
-            }).then((r)=> {
-              if (!that.song.lyrics || that.song.lyrics == '') {
-                axios.put('/song/<?=$song->id?>/lyrics/', {
-                  q_track: this.song.name,
-                  q_artist: this.song.artist
-                }).then(f=>{
-                  if (f.data.message.header.status_code == 200) {
-                    that.song.lyrics = f.data.message.body.lyrics.lyrics_body;
-                  }
-                }).catch(e=>{
-
-                });
-              }
-            });
-          }
-
-          if ((!this.song.albumurl || this.song.albumurl == '') && this.song.artist != '' && this.song.album != '') {
-            axios.get('http://ws.audioscrobbler.com/2.0/', {
-              params: {
-                "method": "album.getinfo",
-                "api_key": "ed3f6345c0413625687fdb95191bb452",
-                "artist": this.song.artist,
-                "album": this.song.album,
-                "format": "json",
-                "autocorrect": 1
-              }
-            }).then((r)=>{
-              if (r.data.album && r.data.album.image) {
-                if (r.data.album.image[4]["#text"] != '') {
-                  that.song.albumurl = r.data.album.image[4]["#text"];
-                }
-              }
-            }).catch((e)=>{
-              
-            });
-          }
-        }
-      },
-      mounted: function() {
-        var that = this;
-
-        $(".chosen-select").chosen({
-          enableAddOnEnter: true
-        }).on('change', function(evt) {
-          that.selectTags(evt);
-        });
-      }
-    })
-  </script>
+</template>
+  

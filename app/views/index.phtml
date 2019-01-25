@@ -25,21 +25,41 @@
     <script src="/js/plugins/sweetalert2.min.js"></script>
 
     <script type="text/javascript" src="/js/vue.js"></script>
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
     <script src="/js/components/star-rating.min.js"></script>
 
     <?php $this->partial('components/music-player'); ?>
-
-    <script type="text/javascript" src="/js/demo.js"></script>
+    <?php $this->partial('index/index'); ?>
+    <?php $this->partial('playlist/index'); ?>
+    <?php $this->partial('playlist/info'); ?>
+    
     <!--[if lt IE 9]> <script src="js/ie/html5shiv.js"></script> <script src="js/ie/respond.min.js"></script> <script src="js/ie/excanvas.js"></script> <![endif]-->
   </head>
 
-  <body >
-    <section class="vbox">
+  <body>
+    <section class="vbox" id="music-app">
       <?php $this->partial('layouts/header'); ?>
-      <?php echo $this->getContent(); ?>
-    </section> <!-- Bootstrap -->
+      <section>
+        <section class="hbox stretch"> 
+          <?php $this->partial('layouts/left_menu'); ?>
+          <section id="content">
+            <section class="hbox stretch">
+              <section>
+                <section class="vbox">
+                  <router-view></router-view>
+                  <?php $this->partial('layouts/song_player'); ?>
+                </section>
+              </section> <!-- side content -->
+              <?php $this->partial('layouts/users_menu'); ?>
+            </section> 
+          </section>
+        </section>
+      </section>
+    </section> 
+    <!-- Bootstrap -->
     <!-- App -->
     <script type="text/javascript">setTimeout(console.groupEnd, 2000)</script>
+    <script type="text/javascript" src="/js/demo.js"></script>
   </body>
 </html>
       

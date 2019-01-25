@@ -32,20 +32,6 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function loadHash() {
-  var current_hash = window.location.hash;
-  if ($.trim(current_hash) != '') {
-    current_hash = current_hash.substring(1);
-    $.get(current_hash, function(data) {
-      
-    });
-  }
-}
-
-$(window).on('hashchange', function() {
-  loadHash();
-});
-
 var store = {
   state: {
     songs: [],
@@ -55,24 +41,145 @@ var store = {
     battery: {
       charging: false,
       level: 1
+    },
+    menu: {
+      open: false,
+    },
+    header:{
+      query: '',
+      notifications: {
+        open: false
+      },
+      profile: {
+        open: false
+      }
+    },
+    player: {
+      available: false
     }
   },
   setMedia: function(mediaList) {
-    this.state.songs = mediaList
+    store.state.songs = mediaList
   }
 };
 
+var mixin = {
+  data: {
+    state: store.state,
+    playlist: []
+  },
+  watch: {
 
-navigator.getBattery().then(function(batteryManager) {
-  if (batteryManager) {
-    batteryManager.onchargingchange = () => {store.state.battery.charging = batteryManager.charging;};
-    batteryManager.onlevelchange = ()=>{store.state.battery.level = batteryManager.level;};
+  },
+  computed: {
+    songCount: function() {
+      return store.state.songs.length.toString().toCommas();
+    },
+    songs: function() {
+      return store.state.songs;
+    }
+  },
+  filters: {
+    durationMin: function(v) {
+      var hrs = ~~(v / 3600), mins = ~~((v % 3600) / 60), secs = ~~v % 60, ret = "";
 
-    store.state.battery.level = batteryManager.level;
-    store.state.battery.charging= batteryManager.charging;
+      if (hrs > 0) {
+          ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
+      }
+
+      ret += "" + mins + ":" + (secs < 10 ? "0" : "");
+      ret += "" + secs;
+      return ret;
+    },
+    filesize: function(v) {
+      var arBytes = [{u: 'TB',v: Math.pow(1024,4)},{u: 'GB',v: Math.pow(1024,3)},{u: 'MB',v: Math.pow(1024,2)},{u: 'KB',v: 1024},{u: 'B',v: 1}];
+      return (Math.round((v / arBytes.find((o)=>{return v>o.v;}).v)*100)/100) + ' ' + arBytes.find((o)=>{return v>o.v;}).u;
+    },
+    tags: function(v) {
+      return v.split(',');
+    },
+  },
+  methods: {
+    clearFilter: function(s) {
+      s = s.toLowerCase().trim();
+      s = s.replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u").replace(/ý/g, "y");
+      s = s.replace(/ä/g, "a").replace(/ë/g, "e").replace(/ï/g, "i").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ÿ/g, "y");
+      s = s.replace(/à/g, "a").replace(/è/g, "e").replace(/ì/g, "i").replace(/ò/g, "o").replace(/ù/g, "u");
+      s = s.replace(/â/g, "a").replace(/ê/g, "e").replace(/î/g, "i").replace(/ô/g, "o").replace(/û/g, "u");
+      s = s.replace(/\'/g, "").replace(/`/g, "");
+      s = s.replace(/#/g,'');
+      return s;
+    },
+    playSong: function(songToPlay, playNow) {
+      if (playNow !== false) playNow=true;
+      if (songToPlay.id == (store.state.songs.find((s)=>s.playing) || { id: false }).id) {
+        musicApp.$refs.player.pause();
+        songToPlay.playing = false;
+        return;
+      }
+
+      (store.state.songs.find((s)=>s.playing&&playNow) || { playing: false }).playing = false;
+
+      songToPlay.playing = playNow;
+
+      musicApp.$refs.player.add({
+        title: songToPlay.name || songToPlay.filename,
+        artist: songToPlay.artist || songToPlay.tags.band,
+        album: songToPlay.album,
+        mp3: '/song/'+songToPlay.id+'.mp3',
+        poster: "",
+        song: songToPlay
+      }, playNow);
+    },
+    deletesong: function(songToDelete,a) {
+      var that  = this;
+      swal({
+        title: 'Are you sure?',
+        position: 'top',
+        text: "You won't be able to revert this!",
+        type: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, delete it!',
+        showLoaderOnConfirm: true,
+        preConfirm: function() {
+          return axios.delete('/song/'+songToDelete.id, {
+            params: {
+
+            }
+          }).then(function (response) {
+            if (response.data.success) {
+              var deletedIndex = store.state.songs.findIndex(f=>f.id == songToDelete.id);
+              store.state.songs.splice(deletedIndex, 1);
+            }
+            return response.data;
+          })
+          .catch(function (error) {
+            
+          }); 
+        },    
+        allowOutsideClick: function() {
+          return !swal.isLoading();
+        }
+      }).then(function(result) {
+        if (result.value.success) {
+          swal({
+            title: 'Deleted!',
+            text: 'Your file has been deleted.',
+            type: 'success',
+            position: 'top',
+          }).then(function() {
+            
+          });
+        }
+      });
+    }
+  },
+  mounted: function() {
+    
   }
-});
-
+};
 
 Vue.component('star-rating', VueStarRating.default);
 Vue.component('music-player', {
@@ -343,6 +450,305 @@ Vue.component('music-player', {
   template: document.getElementById('music-player-template').innerHTML
 });
 
+const Discovery = { 
+  mixins: [mixin],
+  data: function () {
+    return {
+      player: {
+        available: true
+      },
+      playlist: []
+    }
+  },
+  computed: {
+    discoverSongs: function() {
+      var rand_arr = [];
+      for(var indexSong=0;indexSong<12;indexSong++) {
+        rand_arr.push(Math.floor(Math.random() * store.state.songs.length));
+      }
+      return store.state.songs.slice(0).filter((f,fi)=>rand_arr.includes(fi));
+    },
+    newSongs: function() {
+      return store.state.songs.slice(0).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    },
+    topSongs: function() {
+      return store.state.songs.slice(0).sort((a,b)=>b.no_plays-a.no_plays);
+    }
+  },
+  template: document.getElementById('discovery-template').innerHTML 
+};
+
+const Playlist = {  
+  mixins: [mixin],
+  data: function () {
+    return {
+      player: {
+        available: true
+      },
+      playlist: [],
+      filter: '',
+      selected: {
+        genre: localStorage.getItem('genre') || 'All',
+        page: 1,
+        action: ''
+      },
+      listType: localStorage.getItem('listType') || 'box'
+    }
+  },
+  watch: {
+    listType: function() {
+      localStorage.setItem('listType', this.listType);
+    },
+    filter: function(n, o) {
+      var nf = $.trim(n), of = $.trim(o);
+      if (nf != of) {
+
+      }
+    },
+    selected: {
+      deep: true,
+      handler: function(n, o) {
+        localStorage.setItem('genre', n.genre);
+      }
+    }
+  },
+  computed: {
+    pagelimit: function() {
+      var that = this;
+      return Math.ceil(store.state.songs.filter(is=>(is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)).length / 18);
+    },
+    songsTable: function() {
+      var that = this;
+      return store.state.songs.slice(0).filter((is)=> {
+        return (is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)
+      });
+    },
+  },
+  methods: {
+    applyListAction: function() {
+      const that = this;
+      if (this.selected.action != '') {
+        this.songsTable.slice(0).forEach(f=>{
+          musicApp.$refs.player.add({
+            title: f.filename,
+            artist: f.tags.band,
+            mp3: '/song/'+f.id+'.mp3',
+            poster: '',
+            song: f
+          }, false);
+        });
+        this.selected.action = '';
+      }
+    }
+  },
+  template: document.getElementById('playlist-template').innerHTML 
+};
+
+
+const InfoSong = {
+  mixins: [mixin],
+  data:  function () {
+    return {
+      player: {
+        available: true
+      },
+      song: false,
+      folder: '',
+      lyrics: [],
+      tags: [],
+      showlist: {
+        artist: false,
+        genres: false
+      },
+      status: false
+    }
+  },
+  watch: {
+    song: {
+      deep:true,
+      handler: function() {
+        this.song.file_path = this.folder + '\\' + this.song.artist.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.album.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.artist + ' - ' + this.song.track_number + ' - ' +this.song.name + (this.song.name.indexOf('.mp3') > -1 ? '' : '.mp3');
+      }
+    },  
+    '$route' (to, from) {
+      var that = this;
+      if (to.params.id != from.params.id) {
+        axios.get('/songs/'+to.params.id).then(function(response) {
+          if (response.data.success) {
+            that.song = response.data.info;
+            that.folder = response.data.musicFolder;
+            that.tags = response.data.tags;
+
+            setTimeout(function() {
+              $(".chosen-select").chosen({
+                enableAddOnEnter: true
+              }).on('change', function(evt) {
+                that.selectTags(evt);
+              });
+            }, 1000);
+          }
+        }).catch(function() {
+          window.history.back();
+        });
+      }
+    }
+  
+  },
+  computed: {
+    path: function() {
+      return this.song.file_path;
+    },
+    artistFilter: function() {
+      var that = this;
+      return store.state.artists.filter((a)=>{
+        return that.clearFilter(a).indexOf(that.clearFilter(that.song.artist)) > -1 && that.clearFilter(that.song.artist) != that.clearFilter(a);
+      });
+    },
+    genresFilter: function() {
+      var that = this;
+      return store.state.genres.filter((a)=>{
+        return that.clearFilter(a).indexOf(that.clearFilter(that.song.genre)) > -1 && that.clearFilter(that.song.genre) != that.clearFilter(a);
+      });
+    },
+    globalSong: function() {
+      const that = this;
+      return store.state.songs.find(f=>f.id == that.song.id)||{playing:false};
+    }
+  },
+  methods: {
+    saveSongInfo: function() {
+      var that = this;
+      this.status  = 'loading';
+      axios.put('/songs/'+that.song.id +'/', {
+        name: that.song.name,
+        artist: that.song.artist,
+        album: that.song.album,
+        genre: that.song.genre,
+        no_track: that.song.track_number,
+        like: that.song.like,
+        tags: that.song.tags,
+        rating: that.song.rating,
+        lyrics: that.song.lyrics,
+        path: that.song.file_path,
+        albumurl: that.song.albumurl
+      }).then(function (response) {
+        if (response.data.success) {
+          var current_updated_song = that.globalSong;
+          current_updated_song.filename = that.song.name;
+          current_updated_song.genre = that.song.genre;
+          current_updated_song.file_path = that.song.file_path;
+          current_updated_song.rating = that.song.rating;
+          current_updated_song.tags.band = that.song.artist;
+          current_updated_song.tags.genre = that.song.genre;
+          that.status = '';
+        } else if (response.data.message && response.data.message != '') {
+          that.status = response.data.message;
+        }
+      }).catch(function (error) {});
+    },
+    selectTags: function(v) {
+      this.song.tags = $(v.target.selectedOptions).map((i,e)=> $(e).val()).toArray().join(',');
+    },
+    findData: function() {
+      var that = this;
+      this.showlist.artist = false;
+      if (this.song.artist != '' && this.song.name != '') {
+        axios.get('http://ws.audioscrobbler.com/2.0/', {
+          params: {
+            "method": "track.getInfo",
+            "api_key": "ed3f6345c0413625687fdb95191bb452",
+            "artist": this.song.artist,
+            "track": this.song.name,
+            "format": "json",
+            "autocorrect": 1
+          }
+        }).then((r)=>{
+          if (r.data.track) {
+            if (that.song.artist != r.data.track.artist.name) {
+              that.song.artist = r.data.track.artist.name;
+            }
+            if (that.song.name != r.data.track.name) {
+              that.song.name = r.data.track.name;
+            }
+            if (r.data.track.album && that.song.album != r.data.track.album.title) {
+              that.song.album = r.data.track.album.title;
+            }
+          }
+        }).catch((e)=>{
+          
+        }).then((r)=> {
+          if (!that.song.lyrics || that.song.lyrics == '') {
+            axios.put('/song/' + that.song.id+'/lyrics/', {
+              q_track: this.song.name,
+              q_artist: this.song.artist
+            }).then(f=>{
+              if (f.data.message.header.status_code == 200) {
+                that.song.lyrics = f.data.message.body.lyrics.lyrics_body;
+              }
+            }).catch(e=>{
+
+            });
+          }
+        });
+      }
+
+      if ((!this.song.albumurl || this.song.albumurl == '') && this.song.artist != '' && this.song.album != '') {
+        axios.get('http://ws.audioscrobbler.com/2.0/', {
+          params: {
+            "method": "album.getinfo",
+            "api_key": "ed3f6345c0413625687fdb95191bb452",
+            "artist": this.song.artist,
+            "album": this.song.album,
+            "format": "json",
+            "autocorrect": 1
+          }
+        }).then((r)=>{
+          if (r.data.album && r.data.album.image) {
+            if (r.data.album.image[4]["#text"] != '') {
+              that.song.albumurl = r.data.album.image[4]["#text"];
+            }
+          }
+        }).catch((e)=>{
+          
+        });
+      }
+    }
+  },
+  mounted: function() {
+    var that = this;
+    axios.get('/songs/'+that.$route.params.id).then(function(response) {
+      if (response.data.success) {
+        that.song = response.data.info;
+        that.folder = response.data.musicFolder;
+        that.tags = response.data.tags;
+
+        setTimeout(function() {
+          $(".chosen-select").chosen({
+            enableAddOnEnter: true
+          }).on('change', function(evt) {
+            that.selectTags(evt);
+          });
+        }, 1000);
+
+      }
+    }).catch(function() {
+      window.history.back();
+    });
+  }, 
+  template: document.getElementById('song-info-template').innerHTML 
+};
+
+const routes = [
+  { path: '/', component: Discovery },
+  { path: '/songs/:id', component: InfoSong },
+  { path: '/songs', component: Playlist }
+];
+
+const router = new VueRouter({
+  routes // short for `routes: routes`
+});
+
+
 axios.get('/songs/list/', {
   params: {
 
@@ -357,7 +763,7 @@ axios.get('/songs/list/', {
       if (store.state.songs.find((s)=>s.id==e.song.id)) {
         var songToPlay = store.state.songs.find((s)=>s.id==e.song.id);
         songToPlay.playing = e.song.playing;
-        (window['playListContentVuw']||window['infoSongContentVue']||window['indeContentVuw']||window['artistListVue']).$refs.player.add({
+        musicApp.$refs.player.add({
           title: songToPlay.name || songToPlay.filename,
           artist: songToPlay.artist || songToPlay.tags.band,
           album: songToPlay.album,
@@ -373,121 +779,29 @@ axios.get('/songs/list/', {
   
 });
 
-var mixin = {
+
+const musicApp = new Vue({
+  router,
+  mixins: [mixin],
   data: {
     state: store.state,
-    playlist: []
+    playlist: [],
+    player: {
+      available: true
+    },
+    query: ""
   },
-  watch: {
-
-  },
-  computed: {
-    songCount: function() {
-      return this.state.songs.length.toString().toCommas();
-    },
-    songs: function() {
-      return this.state.songs;
-    }
-  },
-  filters: {
-    durationMin: function(v) {
-      var hrs = ~~(v / 3600), mins = ~~((v % 3600) / 60), secs = ~~v % 60, ret = "";
-
-      if (hrs > 0) {
-          ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-      }
-
-      ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-      ret += "" + secs;
-      return ret;
-    },
-    filesize: function(v) {
-      var arBytes = [{u: 'TB',v: Math.pow(1024,4)},{u: 'GB',v: Math.pow(1024,3)},{u: 'MB',v: Math.pow(1024,2)},{u: 'KB',v: 1024},{u: 'B',v: 1}];
-      return (Math.round((v / arBytes.find((o)=>{return v>o.v;}).v)*100)/100) + ' ' + arBytes.find((o)=>{return v>o.v;}).u;
-    },
-    tags: function(v) {
-      return v.split(',');
-    },
-  },
-  methods: {
-    clearFilter: function(s) {
-      s = s.toLowerCase().trim();
-      s = s.replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u").replace(/ý/g, "y");
-      s = s.replace(/ä/g, "a").replace(/ë/g, "e").replace(/ï/g, "i").replace(/ö/g, "o").replace(/ü/g, "u").replace(/ÿ/g, "y");
-      s = s.replace(/à/g, "a").replace(/è/g, "e").replace(/ì/g, "i").replace(/ò/g, "o").replace(/ù/g, "u");
-      s = s.replace(/â/g, "a").replace(/ê/g, "e").replace(/î/g, "i").replace(/ô/g, "o").replace(/û/g, "u");
-      s = s.replace(/\'/g, "").replace(/`/g, "");
-      s = s.replace(/#/g,'');
-      return s;
-    },
-    playSong: function(songToPlay, playNow) {
-      if (playNow !== false) playNow=true;
-      if (songToPlay.id == (this.songs.find((s)=>s.playing) || { id: false }).id) {
-        (window['playListContentVuw']||window['infoSongContentVue']||window['indeContentVuw']||window['artistListVue']).$refs.player.pause();
-        songToPlay.playing = false;
-        return;
-      }
-
-      (this.songs.find((s)=>s.playing&&playNow) || { playing: false }).playing = false;
-
-      songToPlay.playing = playNow;
-
-      (window['playListContentVuw']||window['infoSongContentVue']||window['indeContentVuw']||window['artistListVue']).$refs.player.add({
-        title: songToPlay.name || songToPlay.filename,
-        artist: songToPlay.artist || songToPlay.tags.band,
-        album: songToPlay.album,
-        mp3: '/song/'+songToPlay.id+'.mp3',
-        poster: "",
-        song: songToPlay
-      }, playNow);
-    },
-    deletesong: function(songToDelete,a) {
-      var that  = this;
-      swal({
-        title: 'Are you sure?',
-        position: 'top',
-        text: "You won't be able to revert this!",
-        type: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        showLoaderOnConfirm: true,
-        preConfirm: function() {
-          return axios.delete('/song/'+songToDelete.id, {
-            params: {
-
-            }
-          }).then(function (response) {
-            if (response.data.success) {
-              var deletedIndex = that.state.songs.findIndex(f=>f.id == songToDelete.id);
-              that.state.songs.splice(deletedIndex, 1);
-            }
-            return response.data;
-          })
-          .catch(function (error) {
-            
-          }); 
-        },    
-        allowOutsideClick: function() {
-          return !swal.isLoading();
-        }
-      }).then(function(result) {
-        if (result.value.success) {
-          swal({
-            title: 'Deleted!',
-            text: 'Your file has been deleted.',
-            type: 'success',
-            position: 'top',
-          }).then(function() {
-            
-          });
-        }
+  computed: {  
+    songsQuery: function() {
+      var that = this;
+      return store.state.songs.slice(0).filter((is)=> {
+        return (
+          that.clearFilter(that.query) !== '' && ( 
+            that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.query)) > -1 ||
+            that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.query)) >- 1
+          )
+        );
       });
     }
-  },
-  mounted: function() {
-    
   }
-};
-
+}).$mount('#music-app');

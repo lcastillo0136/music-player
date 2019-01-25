@@ -1,5 +1,5 @@
 <header class="bg-white-only header header-md navbar navbar-fixed-top-xs" id="header_top">
-  <div class="navbar-header aside bg-info " v-bind:class="{'nav-xs': menu_close}"> 
+  <div class="navbar-header aside bg-info " v-bind:class="{'nav-xs': !state.menu.open}"> 
     <a class="btn btn-link visible-xs" data-toggle="class:nav-off-screen,open" data-target="#nav,html"> 
       <i class="icon-list"></i> 
     </a> 
@@ -11,15 +11,15 @@
   </div>
   <ul class="nav navbar-nav hidden-xs">
     <li> 
-      <a href="#nav,.navbar-header" v-on:click.stop.prevent="menuexpand" class="text-muted"> 
+      <a href="#nav,.navbar-header" v-on:click.stop.prevent="state.menu.open=!state.menu.open" class="text-muted"> 
         <i class="fa fa-indent text"></i> <i class="fa fa-dedent text-active"></i> 
       </a> 
     </li>
   </ul>
   <form class="navbar-form navbar-left m-t m-l-n-xs hidden-xs" role="search">
     <div class="form-group">
-      <div class="input-group" v-bind:class="{'open':query!=''}"> 
-        <input type="text" class="form-control input-sm no-border rounded" placeholder="Search songs, albums, tags..." style="width: 200px;" v-model="query" v-on:keyup.escape="query=''">
+      <div class="input-group" v-bind:class="{'open': query!=''}"> 
+        <input type="text" class="form-control input-sm no-border rounded" placeholder="Search songs, albums, tags..." style="width: 200px;" v-model=" query" v-on:keyup.escape="query=''">
         <section class="dropdown-menu aside-xl animated fadeInUp" style="max-height: 500px;overflow-y: auto;">
           <section class="panel bg-white">
             <div class="list-group list-group-alt">
@@ -32,7 +32,7 @@
                     </a>
                   </span>
                   <div>
-                    <a v-bind:href="'/songs/'+s.id" class="text-ellipsis">
+                    <a v-bind:href="'#/songs/'+s.id" class="text-ellipsis" v-on:click="query=''">
                       {{s.filename}}<br/>
                       <small class="text-muted">
                         {{s.tags.band}}
@@ -48,7 +48,7 @@
     </div>
   </form>
   <div class="navbar-right">
-    <ul class="nav navbar-nav m-n hidden-xs nav-user user">
+    <ul class="nav navbar-nav m-n hidden-xs nav-user user hide">
       <li>
         <a href="#"> 
           <i class="fa fa-battery" v-bind:class="{'fa-battery-0 text-danger': (store.state.battery.level>=0&&store.state.battery.level<=0.20),'fa-battery-1': store.state.battery.level>0.20&&store.state.battery.level<=0.40,'fa-battery-2':store.state.battery.level>0.40&&store.state.battery.level<=0.60,'fa-battery-3':store.state.battery.level>0.60&&store.state.battery.level<=0.8, 'fa-battery-full': store.state.battery.level>=0.81}" v-bind:title="Math.round(store.state.battery.level * 100) + '%'"></i> 
@@ -57,7 +57,7 @@
           <span class="badge badge-sm up bg-danger count hide" style="display: inline-block;"></span> 
         </a>
       </li>
-      <li class="hidden-xs hide" v-bind:class="{'open': notification_is_open}"> 
+      <li class="hidden-xs hide" v-bind:class="{'open': state.header.notifications.open}"> 
         <a href="#" class="dropdown-toggle lt" data-toggle="dropdown" v-on:click.stop.prevent="showNotifications"> 
           <i class="icon-bell"></i> 
           <span class="badge badge-sm up bg-danger count" style="display: inline-block;">3</span> 
@@ -95,7 +95,7 @@
           </section>
         </section>
       </li>
-      <li class="dropdown hide" v-bind:class="{'open': profile_is_open}"> 
+      <li class="dropdown hide" v-bind:class="{'open': state.header.profile.open}"> 
         <a href="#" class="dropdown-toggle bg clear" data-toggle="dropdown" v-on:click.stop.prevent="showProfile"> 
           <span class="thumb-sm avatar pull-right m-t-n-sm m-b-n-sm m-l-sm"> <img src="/img/a0.png" alt="..."> </span> 
           John.Smith <b class="caret"></b> 
@@ -113,41 +113,5 @@
   </div>
 </header>
 <script type="text/javascript">
-  var headerVue = new Vue({
-    mixins: [mixin],
-    el: "#header_top",
-    data: {
-      menu_close: true,
-      notification_is_open: false,
-      profile_is_open: false,
-      query: "",
-    },
-    computed: {
-      songsQuery: function() {
-        var that = this;
-        return this.state.songs.slice(0).filter((is)=> {
-          return (
-            that.clearFilter(that.query) !== '' && ( 
-              that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.query)) > -1 ||
-              that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.query)) >- 1
-            )
-          );
-        });
-      },
-    },
-    methods: {
-      menuexpand: function() {
-        this.menu_close = leftMenuVue.menu_close = !this.menu_close;
-      },
-      showNotifications: function() {
-        this.notification_is_open = !this.notification_is_open;
-      },
-      showProfile: function() {
-        this.profile_is_open = !this.profile_is_open;
-      },
-    },
-    mounted: function () {
-      
-    }
-  });
+  
 </script>

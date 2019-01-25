@@ -1,235 +1,159 @@
-  <section>
-    <section class="hbox stretch"> 
-      <?php $this->partial('layouts/left_menu'); ?>
-      <section id="content">
-        <section class="vbox">
-          <section class=""  v-bind:class="{'w-f-md': player.available}" id="bjax-target">
-            <section class="hbox stretch">
-              <!-- side content -->
-              <aside class="aside bg-light dk" id="sidebar">
-                <section class="vbox animated fadeInUp">
-                  <section class="scrollable hover">
-                    <div class="list-group no-radius no-border no-bg m-t-n-xxs m-b-none auto"> 
-                      <a href="#" class="list-group-item" v-bind:class="{'active': selected.genre == g}"  v-for="g in state.genres" v-on:click.stop.prevent="selected.genre=g;selected.page=1" > {{g}} </a> 
-                    </div>
-                  </section>
-                </section>
-              </aside> <!-- / side content -->
+<template id="playlist-template">
+  <section class=""  v-bind:class="{'w-f-md': player.available}" id="bjax-target">
+    <section class="hbox stretch">
+      <!-- side content -->
+      <aside class="aside bg-light dk" id="sidebar">
+        <section class="vbox animated fadeInUp">
+          <section class="scrollable hover">
+            <div class="list-group no-radius no-border no-bg m-t-n-xxs m-b-none auto"> 
+              <a href="#" class="list-group-item" v-bind:class="{'active': selected.genre == g}"  v-for="g in store.state.genres" v-on:click.stop.prevent="selected.genre=g;selected.page=1" > {{g}} </a> 
+            </div>
+          </section>
+        </section>
+      </aside> <!-- / side content -->
 
-              <section>
-                <section class="vbox">
-                  <section class="scrollable padder-lg"> 
-                    <h2 class="font-thin m-b">
-                      {{selected.genre}}
-                      <div class="pull-right btn-group">
-                        <button class="btn btn-default" :class="{'active': listType=='table'}" v-on:click.stop.prevent="listType='table'">
-                          <i class="fa fa-list"></i>
+      <section>
+        <section class="vbox">
+          <section class="scrollable padder-lg"> 
+            <h2 class="font-thin m-b">
+              {{selected.genre}}
+              <div class="pull-right btn-group">
+                <button class="btn btn-default" :class="{'active': listType=='table'}" v-on:click.stop.prevent="listType='table'">
+                  <i class="fa fa-list"></i>
+                </button>
+                <button class="btn btn-default" :class="{'active': listType=='box'}" v-on:click.stop.prevent="listType='box'">
+                  <i class="fa fa-th"></i>
+                </button>
+              </div>
+              <div class="pull-right m-r-sm" style="font-size: 13px;line-height: 35px;">
+                Total songs: {{songCount}}
+              </div>
+              <div class="clearfix"></div>
+            </h2>
+            
+            <div class="row row-sm" v-bind:class="{'hide': listType=='table'}">
+              <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2" v-for="(s, index) in store.state.songs.filter(is=>is.tags.genre == selected.genre || selected.genre == 'All')" v-if="index >= ((selected.page-1) * 18) && index < (selected.page * 18)"  v-bind:class="{'col-0':index%6==0}">
+                <div class="item">
+                  <div class="pos-rlt">
+                    <div class="item-overlay opacity r r-2x bg-black" v-bind:class="{'active': s.playing}">
+                      <div class="center text-center m-t-n"> 
+                        <a href="#" v-on:click.stop.prevent="playSong(s)">
+                          <i class="fa fa-play-circle i-2x" v-if="!s.playing"></i>
+                          <i class="fa fa-pause i-2x" v-if="s.playing"></i>
+                        </a> 
+                      </div>
+                    </div> 
+                    <a v-bind:href="'#/songs/'+s.id">
+                      <img src="/img/a2.png" alt="" class="r r-2x img-full" v-if="s.albumurl==''||!s.albumurl">
+                      <img v-bind:src="s.albumurl" onerror="this.src='/img/a2.png';" alt="" class="r r-2x img-full" v-if="s.albumurl!=''" >
+                    </a>
+                  </div>
+                  <div class="padder-v"> 
+                    <a v-bind:href="'#/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
+                    <a v-bind:href="'#/songs/'+s.id" class="text-ellipsis text-xs text-muted">{{s.tags.band}}</a> 
+                  </div>
+                </div>
+              </div>
+              <div class="clearfix"></div>
+              <ul class="pagination pagination" v-if="pagelimit">
+                <li><a href="#" v-on:click.stop.prevent="selected.page>1&&selected.page--"><i class="fa fa-chevron-left"></i></a></li>
+                <li v-for="index in pagelimit" :key="index" v-bind:class="{'active': selected.page == index}" v-if="(index<=10&&selected.page<7) || ((selected.page-4<=index)&&(selected.page+4>=index))">
+                  <a href="#" v-on:click.stop.prevent="selected.page=index">{{index}}</a>
+                </li>
+                <li><a href="#"  v-on:click.stop.prevent="selected.page<pagelimit&&selected.page++"><i class="fa fa-chevron-right"></i></a></li>
+              </ul>
+            </div>
+            <div class="row row-sm panel panel-default" v-bind:class="{'hide': listType=='box'}">
+              <div class="row wrapper"> 
+                <div class="col-sm-5 m-b-xs"> 
+                  <select class="input-sm form-control input-s-sm inline v-middle" v-model="selected.action"> 
+                    <option value="0">Add to PlayList</option>
+                  </select> 
+                  <button class="btn btn-sm btn-default" v-on:click.stop.prevent="applyListAction">Apply</button> 
+                </div> 
+                <div class="col-sm-4 m-b-xs"> 
+                  
+                </div> 
+                <div class="col-sm-3"> 
+                  <div class="input-group"> 
+                    <input type="text" class="input-sm form-control" placeholder="Search" v-model="filter"> 
+                    <span class="input-group-btn"> 
+                      <button class="btn btn-sm btn-default" type="button"><i class="fa fa-search"></i></button> 
+                    </span> 
+                  </div> 
+                </div> 
+              </div>
+              <div class="table-responsive no-padder ">
+                <table class="table table-striped b-t b-light song-list">
+                  <thead>
+                    <tr>
+                      <th style="width: 1px;"></th>
+                      <th style="">Name</th>
+                      <th style="width: 25%;">Artist</th>
+                      <th style="width: 1%;">Duration</th>
+                      <th style="width: 10%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(s, index) in songsTable" v-if="index >= ((selected.page-1) * 18) && index < (selected.page * 18)" :key="index">
+                      <td style="vertical-align: middle;">
+                        <a href="#" v-on:click.stop.prevent="playSong(s)">
+                          <i class="fa fa-play-circle" v-if="!s.playing"></i>
+                          <i class="fa fa-pause" v-if="s.playing"></i>
+                        </a>
+                      </td>
+                      <td>
+                        <a v-bind:href="'#/songs/'+s.id" class="text-ellipsis">
+                          {{s.filename}}
+                        </a>
+                        <span class="text-muted small">
+                          {{s.file_path}}
+                        </span> 
+                      </td>
+                      <td style="vertical-align: middle;">
+                        {{s.tags.band}}
+                      </td>
+                      <td class="text-right" style="vertical-align: middle;">
+                        {{s.duration|durationMin}}
+                      </td>
+                      <td class="text-right"  style="vertical-align: middle;">
+                        <a class="btn btn-xs btn-info" v-bind:href="'#/songs/'+s.id" >
+                          <i class="fa fa-edit"></i> Edit
+                        </a>
+                        <button class="btn btn-xs btn-danger" v-on:click.stop.prevent="deletesong(s, index)">
+                          <i class="fa fa-trash-o"></i> Delete
                         </button>
-                        <button class="btn btn-default" :class="{'active': listType=='box'}" v-on:click.stop.prevent="listType='box'">
-                          <i class="fa fa-th"></i>
-                        </button>
-                      </div>
-                      <div class="pull-right m-r-sm" style="font-size: 13px;line-height: 35px;">
-                        Total songs: {{songCount}}
-                      </div>
-                      <div class="clearfix"></div>
-                    </h2>
-                    
-                    <div class="row row-sm" v-bind:class="{'hide': listType=='table'}">
-                      <div class="col-xs-6 col-sm-4 col-md-3 col-lg-2" v-for="(s, index) in state.songs.filter(is=>is.tags.genre == selected.genre || selected.genre == 'All')" v-if="index >= ((selected.page-1) * 18) && index < (selected.page * 18)"  v-bind:class="{'col-0':index%6==0}">
-                        <div class="item">
-                          <div class="pos-rlt">
-                            <div class="item-overlay opacity r r-2x bg-black" v-bind:class="{'active': s.playing}">
-                              <div class="center text-center m-t-n"> 
-                                <a href="#" v-on:click.stop.prevent="playSong(s)">
-                                  <i class="fa fa-play-circle i-2x" v-if="!s.playing"></i>
-                                  <i class="fa fa-pause i-2x" v-if="s.playing"></i>
-                                </a> 
-                              </div>
-                            </div> 
-                            <a v-bind:href="'/songs/'+s.id">
-                              <img src="/img/a2.png" alt="" class="r r-2x img-full" v-if="s.albumurl==''||!s.albumurl">
-                              <img v-bind:src="s.albumurl" onerror="this.src='/img/a2.png';" alt="" class="r r-2x img-full" v-if="s.albumurl!=''" >
-                            </a>
-                          </div>
-                          <div class="padder-v"> 
-                            <a v-bind:href="'/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
-                            <a v-bind:href="'/songs/'+s.id" class="text-ellipsis text-xs text-muted">{{s.tags.band}}</a> 
-                          </div>
-                        </div>
-                      </div>
-                      <div class="clearfix"></div>
-                      <ul class="pagination pagination" v-if="pagelimit">
-                        <li><a href="#" v-on:click.stop.prevent="selected.page>1&&selected.page--"><i class="fa fa-chevron-left"></i></a></li>
-                        <li v-for="index in pagelimit" :key="index" v-bind:class="{'active': selected.page == index}" v-if="(index<=10&&selected.page<7) || ((selected.page-4<=index)&&(selected.page+4>=index))">
-                          <a href="#" v-on:click.stop.prevent="selected.page=index">{{index}}</a>
-                        </li>
-                        <li><a href="#"  v-on:click.stop.prevent="selected.page<pagelimit&&selected.page++"><i class="fa fa-chevron-right"></i></a></li>
-                      </ul>
-                    </div>
-                    <div class="row row-sm panel panel-default" v-bind:class="{'hide': listType=='box'}">
-                      <div class="row wrapper"> 
-                        <div class="col-sm-5 m-b-xs"> 
-                          <select class="input-sm form-control input-s-sm inline v-middle" v-model="selected.action"> 
-                            <option value="0">Add to PlayList</option>
-                          </select> 
-                          <button class="btn btn-sm btn-default" v-on:click.stop.prevent="applyListAction">Apply</button> 
-                        </div> 
-                        <div class="col-sm-4 m-b-xs"> 
-                          
-                        </div> 
-                        <div class="col-sm-3"> 
-                          <div class="input-group"> 
-                            <input type="text" class="input-sm form-control" placeholder="Search" v-model="filter"> 
-                            <span class="input-group-btn"> 
-                              <button class="btn btn-sm btn-default" type="button"><i class="fa fa-search"></i></button> 
-                            </span> 
-                          </div> 
-                        </div> 
-                      </div>
-                      <div class="table-responsive no-padder ">
-                        <table class="table table-striped b-t b-light song-list">
-                          <thead>
-                            <tr>
-                              <th style="width: 1px;"></th>
-                              <th style="">Name</th>
-                              <th style="width: 25%;">Artist</th>
-                              <th style="width: 1%;">Duration</th>
-                              <th style="width: 10%;"></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr v-for="(s, index) in songsTable" v-if="index >= ((selected.page-1) * 18) && index < (selected.page * 18)" :key="index">
-                              <td style="vertical-align: middle;">
-                                <a href="#" v-on:click.stop.prevent="playSong(s)">
-                                  <i class="fa fa-play-circle" v-if="!s.playing"></i>
-                                  <i class="fa fa-pause" v-if="s.playing"></i>
-                                </a>
-                              </td>
-                              <td>
-                                <a v-bind:href="'/songs/'+s.id" class="text-ellipsis">
-                                  {{s.filename}}
-                                  
-                                </a><span class="text-muted small">
-                                    {{s.file_path}}
-                                  </span> 
-                              </td>
-                              <td style="vertical-align: middle;">
-                                {{s.tags.band}}
-                              </td>
-                              <td class="text-right" style="vertical-align: middle;">
-                                {{s.duration|durationMin}}
-                              </td>
-                              <td class="text-right"  style="vertical-align: middle;">
-                                <a class="btn btn-xs btn-info" v-bind:href="'/songs/'+s.id" >
-                                  <i class="fa fa-edit"></i> Edit
-                                </a>
-                                <button class="btn btn-xs btn-danger" v-on:click.stop.prevent="deletesong(s, index)">
-                                  <i class="fa fa-trash-o"></i> Delete
-                                </button>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                      <footer class="panel-footer"> 
-                        <div class="row"> 
-                          <div class="col-sm-4 hidden-xs"> 
-                            <select class="input-sm form-control input-s-sm inline v-middle" v-model="selected.action"> 
-                            <option value="0">Add to PlayList</option>
-                          </select> 
-                          <button class="btn btn-sm btn-default" v-on:click.stop.prevent="applyListAction">Apply</button> 
-                          </div> 
-                          <div class="col-sm-4 text-center"> 
-                            <small class="text-muted inline m-t-sm m-b-sm">showing {{(selected.page*18)-17}}-{{(selected.page*18)>songsTable.length?songsTable.length:selected.page*18}} of {{songsTable.length}} songs</small> 
-                          </div> 
-                          <div class="col-sm-4 text-right text-center-xs" v-if="pagelimit"> 
-                            <ul class="pagination pagination-sm m-t-none m-b-none"> 
-                              <li><a href="#" v-on:click.stop.prevent="selected.page>1&&selected.page--"><i class="fa fa-chevron-left"></i></a></li> 
-                              <li v-for="index in pagelimit" :key="index" v-bind:class="{'active': selected.page == index}" v-if="(index<=10&&selected.page<7) || ((selected.page-4<=index)&&(selected.page+4>=index))">
-                                <a href="#" v-on:click.stop.prevent="selected.page=index">{{index}}</a>
-                              </li>
-                              <li><a href="#" v-on:click.stop.prevent="selected.page<pagelimit&&selected.page++"><i class="fa fa-chevron-right"></i></a></li> 
-                            </ul> 
-                          </div> 
-                        </div> 
-                      </footer>
-                    </div>
-                  </section>
-                </section>
-              </section>
-            </section>
-          </section>                        
-          <?php $this->partial('layouts/song_player'); ?>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <footer class="panel-footer"> 
+                <div class="row"> 
+                  <div class="col-sm-4 hidden-xs"> 
+                    <select class="input-sm form-control input-s-sm inline v-middle" v-model="selected.action"> 
+                    <option value="0">Add to PlayList</option>
+                  </select> 
+                  <button class="btn btn-sm btn-default" v-on:click.stop.prevent="applyListAction">Apply</button> 
+                  </div> 
+                  <div class="col-sm-4 text-center"> 
+                    <small class="text-muted inline m-t-sm m-b-sm">showing {{(selected.page*18)-17}}-{{(selected.page*18)>songsTable.length?songsTable.length:selected.page*18}} of {{songsTable.length}} songs</small> 
+                  </div> 
+                  <div class="col-sm-4 text-right text-center-xs" v-if="pagelimit"> 
+                    <ul class="pagination pagination-sm m-t-none m-b-none"> 
+                      <li><a href="#" v-on:click.stop.prevent="selected.page>1&&selected.page--"><i class="fa fa-chevron-left"></i></a></li> 
+                      <li v-for="index in pagelimit" :key="index" v-bind:class="{'active': selected.page == index}" v-if="(index<=10&&selected.page<7) || ((selected.page-4<=index)&&(selected.page+4>=index))">
+                        <a href="#" v-on:click.stop.prevent="selected.page=index">{{index}}</a>
+                      </li>
+                      <li><a href="#" v-on:click.stop.prevent="selected.page<pagelimit&&selected.page++"><i class="fa fa-chevron-right"></i></a></li> 
+                    </ul> 
+                  </div> 
+                </div> 
+              </footer>
+            </div>
+          </section>
         </section>
       </section>
     </section>
   </section>
-   
-  <script type="text/javascript">
-    var playListContentVuw = new Vue({
-      mixins: [mixin],
-      el: '#content',
-      data: {
-        player: {
-          available: true
-        },
-        filter: '',
-        selected: {
-          genre: localStorage.getItem('genre') || 'All',
-          page: 1,
-          action: ''
-        },
-        listType: localStorage.getItem('listType') || 'box'
-      },
-      watch: {
-        listType: function() {
-          localStorage.setItem('listType', this.listType);
-        },
-        filter: function(n, o) {
-          var nf = $.trim(n), of = $.trim(o);
-          if (nf != of) {
-
-          }
-        },
-        selected: {
-          deep: true,
-          handler: function(n, o) {
-            localStorage.setItem('genre', n.genre);
-          }
-        }
-      },
-      computed: {
-        pagelimit: function() {
-          var that = this;
-          return Math.ceil(this.state.songs.filter(is=>(is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)).length / 18);
-        },
-        songsTable: function() {
-          var that = this;
-          return this.state.songs.slice(0).filter((is)=> {
-            return (is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)
-          });
-        },
-      },
-      methods: {
-        applyListAction: function() {
-          const that = this;
-          if (this.selected.action != '') {
-            this.songsTable.slice(0).forEach(f=>{
-              that.$refs.player.add({
-                title: f.filename,
-                artist: f.tags.band,
-                mp3: '/song/'+f.id+'.mp3',
-                poster: '',
-                song: f
-              }, false);
-            });
-            this.selected.action = '';
-          }
-        }
-      },
-      mounted: function () {
-        
-      }
-    })
-  </script>
+</template>
