@@ -18,8 +18,6 @@ class PlaylistController extends ControllerBase {
 
     $tags_query = $this->modelsManager->createQuery("SELECT DISTINCT substring_index(substring_index(s.tags, ',', a.id), ',', -1) as tag FROM songs s JOIN songs a ON char_length(s.tags) - char_length(replace(s.tags, ',', '')) >= a.id - 1 ORDER BY tag");
     $tags_result = $tags_query->execute();
-
-
     $getID3 = new getID3;
     $ThisFileInfo = $getID3->analyze($infoSong->file_path);
     getid3_lib::CopyTagsToComments($ThisFileInfo);
@@ -43,7 +41,7 @@ class PlaylistController extends ControllerBase {
     $sendback_response["musicFolder"] = realpath($this->config->application->musicFolder);
     $sendback_response["success"] = true;
 
-    echo json_encode($sendback_response);
+    echo json_encode($sendback_response,JSON_PARTIAL_OUTPUT_ON_ERROR);
     die();
   }
 
