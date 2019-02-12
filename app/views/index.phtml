@@ -11,11 +11,6 @@
     <link rel="stylesheet" href="/css/app.v1.css" type="text/css">
     <link rel="stylesheet" href="/css/chosen.css" type="text/css">
     <link rel="stylesheet" href="/css/sweetalert.css" type="text/css">
-    <script type="text/javascript">
-      /*/ console.error = function() {return false};*/
-      console.groupCollapsed("Loading Page");
-
-    </script>
     <script src="/js/axios.min.js"></script>
     <script type="text/javascript" src="/js/jquery-2.1.1.js"></script>
     <script type="text/javascript" src="/js/Bootstrap.min.js"></script>
@@ -32,25 +27,28 @@
     <?php $this->partial('index/index'); ?>
     <?php $this->partial('playlist/index'); ?>
     <?php $this->partial('playlist/info'); ?>
-    
+    <?php $this->partial('layouts/header'); ?>
+    <?php $this->partial('layouts/left_menu'); ?>
     <!--[if lt IE 9]> <script src="js/ie/html5shiv.js"></script> <script src="js/ie/respond.min.js"></script> <script src="js/ie/excanvas.js"></script> <![endif]-->
   </head>
 
   <body>
     <section class="vbox" id="music-app">
-      <?php $this->partial('layouts/header'); ?>
+      <music-header :songs="state.songs" v-model="menu"  ref="header"></music-header>
       <section>
         <section class="hbox stretch"> 
-          <?php $this->partial('layouts/left_menu'); ?>
+          <music-leftmenu v-model="menu" ref="menu"></music-leftmenu>
           <section id="content">
             <section class="hbox stretch">
               <section>
                 <section class="vbox">
                   <router-view></router-view>
-                  <?php $this->partial('layouts/song_player'); ?>
+                  <footer class="footer bg-dark" v-if="player.available">
+                    <music-player :playlist="playlist" ref="player"></music-player>
+                  </footer>
                 </section>
               </section> <!-- side content -->
-              <?php $this->partial('layouts/users_menu'); ?>
+              
             </section> 
           </section>
         </section>
@@ -58,7 +56,7 @@
     </section> 
     <!-- Bootstrap -->
     <!-- App -->
-    <script type="text/javascript">setTimeout(console.groupEnd, 2000)</script>
+    
     <script type="text/javascript" src="/js/demo.js"></script>
   </body>
 </html>

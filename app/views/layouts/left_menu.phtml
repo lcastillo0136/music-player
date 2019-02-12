@@ -1,5 +1,6 @@
+<template id="music-leftmenu">
   <!-- .aside -->
-  <aside class="bg-black dk aside hidden-print" v-bind:class="{'nav-xs': !state.menu.open}" id="nav">
+  <aside class="bg-black dk aside hidden-print" v-bind:class="{'nav-xs': !value.open}" id="nav">
     <section class="vbox">
       <section class="w-f-md scrollable">
         <div class="slimScrollDiv" style="position: relative; overflow: hidden; width: auto; height: 859px;">
@@ -8,7 +9,7 @@
             <nav class="nav-primary hidden-xs">
               <ul class="nav bg clearfix">
                 <li class="hidden-nav-xs padder m-t m-b-sm text-xs text-muted"> Discover </li>
-                <li> <a href="/#/"> <i class="icon-disc icon text-success"></i> <span class="font-bold">What's new</span> </a> </li>
+                <li><router-link to="/"><i class="icon-disc icon text-success"></i> <span class="font-bold">What's new</span></router-link></li>
                 <li><router-link to="/songs"><i class="icon-music-tone-alt icon text-info"></i> <span class="font-bold">Genres</span> </router-link></li>
                 <li><router-link to="/artist"><i class="icon-users icon text-info"></i> <span class="font-bold">Artist</span></router-link></li>
                 <!-- <li> <a href=""> <i class="icon-drawer icon text-primary-lter"></i> <b class="badge bg-primary pull-right">6</b> <span class="font-bold">Events</span> </a> </li>
@@ -24,3 +25,4 @@
       </section>
     </section>
   </aside> <!-- /.aside -->
+</template>

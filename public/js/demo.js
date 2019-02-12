@@ -35,50 +35,13 @@ function sleep(ms) {
 var store = {
   state: {
     songs: [],
-    artist: [],
-    genres: [],
-    artists: [],
-    battery: {
-      charging: false,
-      level: 1
-    },
     menu: {
-      open: false,
-    },
-    header:{
-      query: '',
-      notifications: {
-        open: false
-      },
-      profile: {
-        open: false
-      }
-    },
-    player: {
-      available: false
+      open: false
     }
-  },
-  setMedia: function(mediaList) {
-    store.state.songs = mediaList
   }
 };
 
 var mixin = {
-  data: {
-    state: store.state,
-    playlist: []
-  },
-  watch: {
-
-  },
-  computed: {
-    songCount: function() {
-      return store.state.songs.length.toString().toCommas();
-    },
-    songs: function() {
-      return store.state.songs;
-    }
-  },
   filters: {
     durationMin: function(v) {
       var hrs = ~~(v / 3600), mins = ~~((v % 3600) / 60), secs = ~~v % 60, ret = "";
@@ -130,59 +93,14 @@ var mixin = {
         poster: "",
         song: songToPlay
       }, playNow);
-    },
-    deletesong: function(songToDelete,a) {
-      var that  = this;
-      swal({
-        title: 'Are you sure?',
-        position: 'top',
-        text: "You won't be able to revert this!",
-        type: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-        showLoaderOnConfirm: true,
-        preConfirm: function() {
-          return axios.delete('/song/'+songToDelete.id, {
-            params: {
-
-            }
-          }).then(function (response) {
-            if (response.data.success) {
-              var deletedIndex = store.state.songs.findIndex(f=>f.id == songToDelete.id);
-              store.state.songs.splice(deletedIndex, 1);
-            }
-            return response.data;
-          })
-          .catch(function (error) {
-            
-          }); 
-        },    
-        allowOutsideClick: function() {
-          return !swal.isLoading();
-        }
-      }).then(function(result) {
-        if (result.value.success) {
-          swal({
-            title: 'Deleted!',
-            text: 'Your file has been deleted.',
-            type: 'success',
-            position: 'top',
-          }).then(function() {
-            
-          });
-        }
-      });
     }
-  },
-  mounted: function() {
-    
   }
 };
 
 Vue.component('star-rating', VueStarRating.default);
 Vue.component('music-player', {
+  mixins: [mixin],
+  props: ['playlist'],
   data: function () {
     return {
       player: false,
@@ -193,19 +111,6 @@ Vue.component('music-player', {
       repeat: (localStorage.getItem('player.repeat') && localStorage.getItem('player.repeat') == 'true') || false,
       shuffle: (localStorage.getItem('player.shuffle') && localStorage.getItem('player.shuffle') == 'true') || false
     }
-  },
-  filters: {
-    durationMin: function(v) {
-      var hrs = ~~(v / 3600), mins = ~~((v % 3600) / 60), secs = ~~v % 60, ret = "";
-
-      if (hrs > 0) {
-          ret += "" + hrs + ":" + (mins < 10 ? "0" : "");
-      }
-
-      ret += "" + mins + ":" + (secs < 10 ? "0" : "");
-      ret += "" + secs;
-      return ret;
-    },
   },
   mounted: function() {
     const that = this;
@@ -255,10 +160,9 @@ Vue.component('music-player', {
       },
       ended: function() {
         var count_song = that.playlist[that.current].song.id;
-        setTimeout(function(){
+        setTimeout(function() {
           axios.get('/song/end/' + count_song);
         }, 2000);
-        
         if (that.playlist.length > 0) {
           if (that.current < that.playlist.length-1) {
             that.playlist[that.current].song.playing = false;
@@ -304,17 +208,19 @@ Vue.component('music-player', {
       if (this.isPlaying) {
         return (this.playlist[this.current] && this.playlist[this.current].song.duration) || '--';
       }
-      return "--";
+
+      return '--';
     },
     song: function() {
       if (this.isPlaying) {
         return this.playlist[this.current];
       }
-      return false;
+
+      return '--';
     },
     baridth: function() {
       return ((this.currentTime*100)/this.duration) >= 100 ? 100 : ((this.currentTime*100)/this.duration);
-    },
+    }
   },
   methods: {
     add: function(s, p, d) {
@@ -333,10 +239,8 @@ Vue.component('music-player', {
       localStorage.setItem('player.list', JSON.stringify(this.playlist));
     },
     select: function(i) {
-      if (this.current !== false && this.current > -1) {
-        this.playlist[this.current].song.playing = false;
-      }
       if (this.current !== i) { 
+        this.pause();
         this.current = i;
         this.playlist[this.current].song.playing = true;
         this.player.jPlayer('setMedia', this.playlist[i]).jPlayer("play");
@@ -345,7 +249,17 @@ Vue.component('music-player', {
       }
       localStorage.setItem('player.list', JSON.stringify(this.playlist));
     },
+    remove: function(index) {
+      if (this.playlist[index].song.playing) {
+        if(!this.next()){
+          this.stop();
+        }
+      }
+      this.playlist.splice(index, 1);
+      this.current = this.playlist.findIndex(f=>{return f.song.playing});
+    },
     stop: function() {
+      this.playlist[this.current].song.playing = false;
       this.current = false;
       this.player.jPlayer('stop');
       localStorage.setItem('player.list', JSON.stringify(this.playlist));
@@ -353,7 +267,7 @@ Vue.component('music-player', {
     play: function() {
       if (this.current !== false && this.current > -1) {
         if (this.isPlaying) {
-          this.player.jPlayer("pause");
+          this.player.jPlayer('pause');
           this.playlist[this.current].song.playing = false;
         } else {
           this.playlist[this.current].song.playing = true;
@@ -362,61 +276,54 @@ Vue.component('music-player', {
       }
       localStorage.setItem('player.list', JSON.stringify(this.playlist));
     },
-    pause: function() {
+    pause: function(force) {
       if (this.current !== false && this.current > -1) {
         if (this.isPlaying) {
           this.player.jPlayer("pause");
           this.playlist[this.current].song.playing = false;
-        } 
-      }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    previous: function() {
-      if (this.current !== false && this.current > -1 && this.current-1>=0) {
-        this.pause();
-        this.current-=1;
-        this.playlist[this.current].song.playing = true;
-        this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play");
+        } else {
+          this.play();
+        }
       }
       localStorage.setItem('player.list', JSON.stringify(this.playlist));
     },
     next: function() {
-      if (this.current !== false && this.current > -1 && this.current+1<=this.playlist.length-1) {
+      if (this.current !== false && this.current > -1 && this.current +1 <= this.playlist.length-1) {
         this.pause();
         this.current+=1;
-        this.playlist[this.current].song.playing = true;
         this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play");
+        this.play();
+        localStorage.setItem('player.list', JSON.stringify(this.playlist));
+        return true;
       }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
+      return false;
+    },
+    previous: function() {
+      if (this.current !== false && this.current > -1 && this.current-1 >= 0) {
+        this.pause();
+        this.current-=1;
+        this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play");
+        this.play();
+        localStorage.setItem('player.list', JSON.stringify(this.playlist));
+        return true;
+      }
+      return false;
     },
     mute: function(muted) {
       if (muted !== false && muted !== true) muted = true;
-      this.player.jPlayer(muted ? "mute" : "unmute");
+      this.player.jPlayer(muted ? 'mute': 'unmute');
       this.muted = muted;
     },
-    remove: function(i) {
-      if (this.playlist[i].song.playing) {
-        this.playlist[i].song.playing = false;
-        this.stop();
-      }
-      this.playlist.splice(i, 1);
-
-      if (this.playlist.findIndex(f=>f.song.playing) > -1) {
-        this.current = this.playlist.findIndex(f=>f.song.playing);
-      } else {
-        this.current = false;
-      }
-    },
     selectedTime: function(event) {
-      var select_time = (event.offsetX * 100) /event.srcElement.offsetWidth;
-      select_time = (select_time * this.duration) / 100;
-      this.player.jPlayer("play", select_time);
+      var selected_time = (event.offsetX * 100) / event.srcElement.offsetWidth;
+      selected_time = (selected_time * this.duration) / 100;
+      this.player.jPlayer('play', selected_time);
     },
-    selectVolume: function(event) {
-      var select_volume = (event.offsetX * 100) /event.srcElement.offsetWidth;
-      select_volume = (select_volume * 1) / 100;
-      this.player.jPlayer("volume", select_volume);
-      localStorage.setItem('player.volume', select_volume);
+    selectVolume : function(event) {
+      var selected_volume = (event.offsetX * 100) / event.srcElement.offsetWidth;
+      selected_volume = (selected_volume * 1) / 100;
+      this.player.jPlayer('volume', selected_volume);
+      localStorage.setItem('player.volume', selected_volume);
     },
     setRepeat: function() {
       this.repeat = !this.repeat;
@@ -433,22 +340,60 @@ Vue.component('music-player', {
     cleanList: function() {
       this.shuffle = true;
       this.setShuffle();
-        
-      if (this.current && this.current > -1) {
-        this.playlist[this.current].song.playing = false;
-      }
 
-      for(let i=this.playlist.length-1;i>=0;i--) {
-        this.remove(i);
+      if (this.current !== false && this.current > -1) {
+        this.stop();
+        this.playlist = [];
+        localStorage.removeItem('player.list');
       }
-
-      this.stop();
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
     }
   },
-  props: ['playlist'],
   template: document.getElementById('music-player-template').innerHTML
 });
+
+Vue.component('music-header', {
+  mixins: [mixin],
+  props: {
+    value: Object,
+    songs: Array
+  },
+  data: function() {
+    return {
+      query: '',
+      header: {
+        notifications: {
+          open: false
+        },
+        profile: {
+          open: false
+        }
+      }
+    }
+  },
+  computed: {
+    songsQuery: function() {
+      return this.songs.slice(0).filter((is)=> {
+        return this.clearFilter(this.query) !== '' && this.clearFilter(Object.values(is).join('')+Object.values(is.tags).join('')).indexOf(this.clearFilter(this.query)) > -1
+      })
+    }
+  },
+  methods: {
+    showNotifications: function() {
+
+    },
+    showProfile: function() {
+
+    }
+  },
+  template: '#music-header'
+});
+
+Vue.component('music-leftmenu', {
+  props: {
+    value: Object
+  },
+  template: '#music-leftmenu'
+})
 
 const Discovery = { 
   mixins: [mixin],
@@ -478,330 +423,62 @@ const Discovery = {
   template: document.getElementById('discovery-template').innerHTML 
 };
 
-const Playlist = {  
-  mixins: [mixin],
-  data: function () {
-    return {
-      player: {
-        available: true
-      },
-      playlist: [],
-      filter: '',
-      selected: {
-        genre: localStorage.getItem('genre') || 'All',
-        page: 1,
-        action: ''
-      },
-      listType: localStorage.getItem('listType') || 'box'
-    }
-  },
-  watch: {
-    listType: function() {
-      localStorage.setItem('listType', this.listType);
-    },
-    filter: function(n, o) {
-      var nf = $.trim(n), of = $.trim(o);
-      if (nf != of) {
 
-      }
-    },
-    selected: {
-      deep: true,
-      handler: function(n, o) {
-        localStorage.setItem('genre', n.genre);
-      }
-    }
-  },
-  computed: {
-    pagelimit: function() {
-      var that = this;
-      return Math.ceil(store.state.songs.filter(is=>(is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)).length / 18);
-    },
-    songsTable: function() {
-      var that = this;
-      return store.state.songs.slice(0).filter((is)=> {
-        return (is.tags.genre == that.selected.genre || that.selected.genre == 'All') && (that.clearFilter(that.filter)==''||that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.filter))>-1||that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.filter))>-1)
-      });
-    },
-  },
-  methods: {
-    applyListAction: function() {
-      const that = this;
-      if (this.selected.action != '') {
-        this.songsTable.slice(0).forEach(f=>{
-          musicApp.$refs.player.add({
-            title: f.filename,
-            artist: f.tags.band,
-            mp3: '/song/'+f.id+'.mp3',
-            poster: '',
-            song: f
-          }, false);
-        });
-        this.selected.action = '';
-      }
-    }
-  },
-  template: document.getElementById('playlist-template').innerHTML 
-};
-
-
-const InfoSong = {
-  mixins: [mixin],
-  data:  function () {
-    return {
-      player: {
-        available: true
-      },
-      song: false,
-      folder: '',
-      lyrics: [],
-      tags: [],
-      showlist: {
-        artist: false,
-        genres: false
-      },
-      status: false
-    }
-  },
-  watch: {
-    song: {
-      deep:true,
-      handler: function() {
-        this.song.file_path = this.folder + '\\' + this.song.artist.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.album.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.artist + ' - ' + this.song.track_number + ' - ' +this.song.name + (this.song.name.indexOf('.mp3') > -1 ? '' : '.mp3');
-      }
-    },  
-    '$route' (to, from) {
-      var that = this;
-      if (to.params.id != from.params.id) {
-        axios.get('/songs/'+to.params.id).then(function(response) {
-          if (response.data.success) {
-            that.song = response.data.info;
-            that.folder = response.data.musicFolder;
-            that.tags = response.data.tags;
-
-            setTimeout(function() {
-              $(".chosen-select").chosen({
-                enableAddOnEnter: true
-              }).on('change', function(evt) {
-                that.selectTags(evt);
-              });
-            }, 1000);
-          }
-        }).catch(function() {
-          window.history.back();
-        });
-      }
-    }
-  
-  },
-  computed: {
-    path: function() {
-      return this.song.file_path;
-    },
-    artistFilter: function() {
-      var that = this;
-      return store.state.artists.filter((a)=>{
-        return that.clearFilter(a).indexOf(that.clearFilter(that.song.artist)) > -1 && that.clearFilter(that.song.artist) != that.clearFilter(a);
-      });
-    },
-    genresFilter: function() {
-      var that = this;
-      return store.state.genres.filter((a)=>{
-        return that.clearFilter(a).indexOf(that.clearFilter(that.song.genre)) > -1 && that.clearFilter(that.song.genre) != that.clearFilter(a);
-      });
-    },
-    globalSong: function() {
-      const that = this;
-      return store.state.songs.find(f=>f.id == that.song.id)||{playing:false};
-    }
-  },
-  methods: {
-    saveSongInfo: function() {
-      var that = this;
-      this.status  = 'loading';
-      axios.put('/songs/'+that.song.id +'/', {
-        name: that.song.name,
-        artist: that.song.artist,
-        album: that.song.album,
-        genre: that.song.genre,
-        no_track: that.song.track_number,
-        like: that.song.like,
-        tags: that.song.tags,
-        rating: that.song.rating,
-        lyrics: that.song.lyrics,
-        path: that.song.file_path,
-        albumurl: that.song.albumurl
-      }).then(function (response) {
-        if (response.data.success) {
-          var current_updated_song = that.globalSong;
-          current_updated_song.filename = that.song.name;
-          current_updated_song.genre = that.song.genre;
-          current_updated_song.file_path = that.song.file_path;
-          current_updated_song.rating = that.song.rating;
-          current_updated_song.tags.band = that.song.artist;
-          current_updated_song.tags.genre = that.song.genre;
-          that.status = '';
-        } else if (response.data.message && response.data.message != '') {
-          that.status = response.data.message;
-        }
-      }).catch(function (error) {});
-    },
-    selectTags: function(v) {
-      this.song.tags = $(v.target.selectedOptions).map((i,e)=> $(e).val()).toArray().join(',');
-    },
-    findData: function() {
-      var that = this;
-      this.showlist.artist = false;
-      if (this.song.artist != '' && this.song.name != '') {
-        axios.get('http://ws.audioscrobbler.com/2.0/', {
-          params: {
-            "method": "track.getInfo",
-            "api_key": "ed3f6345c0413625687fdb95191bb452",
-            "artist": this.song.artist,
-            "track": this.song.name,
-            "format": "json",
-            "autocorrect": 1
-          }
-        }).then((r)=>{
-          if (r.data.track) {
-            if (that.song.artist != r.data.track.artist.name) {
-              that.song.artist = r.data.track.artist.name;
-            }
-            if (that.song.name != r.data.track.name) {
-              that.song.name = r.data.track.name;
-            }
-            if (r.data.track.album && that.song.album != r.data.track.album.title) {
-              that.song.album = r.data.track.album.title;
-            }
-          }
-        }).catch((e)=>{
-          
-        }).then((r)=> {
-          if (!that.song.lyrics || that.song.lyrics == '') {
-            axios.put('/song/' + that.song.id+'/lyrics/', {
-              q_track: this.song.name,
-              q_artist: this.song.artist
-            }).then(f=>{
-              if (f.data.message.header.status_code == 200) {
-                that.song.lyrics = f.data.message.body.lyrics.lyrics_body;
-              }
-            }).catch(e=>{
-
-            });
-          }
-        });
-      }
-
-      if ((!this.song.albumurl || this.song.albumurl == '') && this.song.artist != '' && this.song.album != '') {
-        axios.get('http://ws.audioscrobbler.com/2.0/', {
-          params: {
-            "method": "album.getinfo",
-            "api_key": "ed3f6345c0413625687fdb95191bb452",
-            "artist": this.song.artist,
-            "album": this.song.album,
-            "format": "json",
-            "autocorrect": 1
-          }
-        }).then((r)=>{
-          if (r.data.album && r.data.album.image) {
-            if (r.data.album.image[4]["#text"] != '') {
-              that.song.albumurl = r.data.album.image[4]["#text"];
-            }
-          }
-        }).catch((e)=>{
-          
-        });
-      }
-    }
-  },
-  mounted: function() {
-    var that = this;
-    axios.get('/songs/'+that.$route.params.id).then(function(response) {
-      if (response.data.success) {
-        that.song = response.data.info;
-        that.folder = response.data.musicFolder;
-        that.tags = response.data.tags;
-
-        setTimeout(function() {
-          $(".chosen-select").chosen({
-            enableAddOnEnter: true
-          }).on('change', function(evt) {
-            that.selectTags(evt);
-          });
-        }, 1000);
-
-      }
-    }).catch(function() {
-      window.history.back();
-    });
-  }, 
-  template: document.getElementById('song-info-template').innerHTML 
-};
 
 const routes = [
-  { path: '/', component: Discovery },
-  { path: '/songs/:id', component: InfoSong },
-  { path: '/songs', component: Playlist }
+  { path: '/', component: Discovery }
 ];
 
 const router = new VueRouter({
-  routes // short for `routes: routes`
+  routes: routes
 });
 
 
-axios.get('/songs/list/', {
-  params: {
-
-  }
-}).then(function (response) {
-  if (response.data.success) {
-    store.state.songs = response.data.list;
-    store.state.genres = response.data.genres;
-    store.state.artists = response.data.artists;
-
-    (eval(localStorage.getItem('player.list')) || []).forEach(function(e, i) {
-      if (store.state.songs.find((s)=>s.id==e.song.id)) {
-        var songToPlay = store.state.songs.find((s)=>s.id==e.song.id);
-        songToPlay.playing = e.song.playing;
-        musicApp.$refs.player.add({
-          title: songToPlay.name || songToPlay.filename,
-          artist: songToPlay.artist || songToPlay.tags.band,
-          album: songToPlay.album,
-          mp3: '/song/'+songToPlay.id+'.mp3',
-          poster: "",
-          song: songToPlay
-        }, songToPlay.playing);
-      }
-    });
-  }
-})
-.catch(function (error) {
-  
-});
 
 
 const musicApp = new Vue({
-  router,
-  mixins: [mixin],
+  router: router,
+  el: '#music-app',
   data: {
     state: store.state,
     playlist: [],
     player: {
       available: true
     },
+    menu: {
+      open: false
+    },
     query: ""
   },
-  computed: {  
-    songsQuery: function() {
-      var that = this;
-      return store.state.songs.slice(0).filter((is)=> {
-        return (
-          that.clearFilter(that.query) !== '' && ( 
-            that.clearFilter(Object.values(is).join('')).indexOf(that.clearFilter(that.query)) > -1 ||
-            that.clearFilter(Object.values(is.tags).join('')).indexOf(that.clearFilter(that.query)) >- 1
-          )
-        );
-      });
-    }
+  mounted: function() {
+    axios.get('/songs/list/', {
+      params: {
+
+      }
+    }).then((response)=> {
+      if (response.data.success) {
+        this.state.songs = response.data.list;
+        this.state.genres = response.data.genres;
+        this.state.artists = response.data.artists;
+
+        (eval(localStorage.getItem('player.list')) || []).forEach((e, i)=> {
+          if (this.state.songs.find((s)=>s.id==e.song.id)) {
+            var songToPlay = this.state.songs.find((s)=>s.id==e.song.id);
+            songToPlay.playing = e.song.playing;
+            musicApp.$refs.player.add({
+              title: songToPlay.name || songToPlay.filename,
+              artist: songToPlay.artist || songToPlay.tags.band,
+              album: songToPlay.album,
+              mp3: '/song/'+songToPlay.id+'.mp3',
+              poster: "",
+              song: songToPlay
+            }, songToPlay.playing);
+          }
+        });
+      }
+    })
+    .catch(function (error) {
+      
+    });
   }
-}).$mount('#music-app');
+});
