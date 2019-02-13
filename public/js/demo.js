@@ -74,282 +74,14 @@ var mixin = {
       return s;
     },
     playSong: function(songToPlay, playNow) {
-      if (playNow !== false) playNow=true;
-      if (songToPlay.id == (store.state.songs.find((s)=>s.playing) || { id: false }).id) {
-        musicApp.$refs.player.pause();
-        songToPlay.playing = false;
-        return;
-      }
-
-      (store.state.songs.find((s)=>s.playing&&playNow) || { playing: false }).playing = false;
-
-      songToPlay.playing = playNow;
-
-      musicApp.$refs.player.add({
-        title: songToPlay.name || songToPlay.filename,
-        artist: songToPlay.artist || songToPlay.tags.band,
-        album: songToPlay.album,
-        mp3: '/song/'+songToPlay.id+'.mp3',
-        poster: "",
-        song: songToPlay
-      }, playNow);
+        musicApp.addSong(songToPlay);
     }
   }
 };
+Vue.config.devtools = true;
 
 Vue.component('star-rating', VueStarRating.default);
-Vue.component('music-player', {
-  mixins: [mixin],
-  props: ['playlist'],
-  data: function () {
-    return {
-      player: false,
-      current: false,
-      muted: false,
-      currentTime: 0,
-      volume: localStorage.getItem('player.volume') || 0.8,
-      repeat: (localStorage.getItem('player.repeat') && localStorage.getItem('player.repeat') == 'true') || false,
-      shuffle: (localStorage.getItem('player.shuffle') && localStorage.getItem('player.shuffle') == 'true') || false
-    }
-  },
-  mounted: function() {
-    const that = this;
-    this.player = $("#jplayer_N").jPlayer( {
-      ready: function () {
-        $('body').on('keydown', function(evt) {
-          if (evt.target == document.body) {
-            if ((evt.keyCode || evt.which) == 32) {
-              that.play();
-              evt.preventDefault();
-            }
-            if ((evt.keyCode || evt.which) == 37) { // left
-              that.previous();
-              evt.preventDefault();
-            } 
-
-            if ((evt.keyCode || evt.which) == 39 ) { // right
-              that.next();
-              evt.preventDefault();
-            }
-
-            if ((evt.keyCode || evt.which) == 76) { // L key
-              //show list
-              evt.preventDefault();
-            }
-            if ((evt.keyCode || evt.which) == 38) { // Up
-              that.player.jPlayer("volume", that.volume + (that.volume>=1?0:0.1));
-              evt.preventDefault();
-            }
-            if ((evt.keyCode || evt.which) == 40) { // down
-              that.player.jPlayer("volume", that.volume-(that.volume<=0?0:0.1));
-              evt.preventDefault();
-            }
-
-            if ((evt.keyCode || evt.which) == 83) { // shuffle
-              that.setShuffle();
-            }
-
-            if ((evt.keyCode || evt.which) == 82) { // repeat
-              that.setRepeat();
-            }
-          }
-        });
-      },
-      timeupdate: function(evt) {
-        that.currentTime = evt.jPlayer.status.currentTime;
-      },
-      ended: function() {
-        var count_song = that.playlist[that.current].song.id;
-        setTimeout(function() {
-          axios.get('/song/end/' + count_song);
-        }, 2000);
-        if (that.playlist.length > 0) {
-          if (that.current < that.playlist.length-1) {
-            that.playlist[that.current].song.playing = false;
-            that.current+=1;
-            that.playlist[that.current].song.playing = true;
-            that.player.jPlayer('setMedia', that.playlist[that.current]).jPlayer("play");
-          } else {
-            that.playlist[that.current].song.playing = false;
-            if (that.repeat) {
-              that.current=0;
-              that.playlist[that.current].song.playing = true;
-              that.player.jPlayer('setMedia', that.playlist[that.current]).jPlayer("play");
-            } else {
-              that.stop();
-            }
-          }
-        } else {
-
-        }
-        localStorage.setItem('player.list', JSON.stringify(that.playlist));
-      },
-      volumechange : function(evt) {
-        that.volume = evt.jPlayer.options.volume;
-        localStorage.setItem('player.volume', that.volume);
-      },
-      supplied: "mp3",
-      swfPath: "/jPlayer/js",
-      volume: this.volume
-    });
-
-    
-  },
-  watch: {
-    playlist: function(n, o) {
-      localStorage.setItem('player.list', JSON.stringify(n));
-    },
-  },
-  computed: {
-    isPlaying: function() {
-      return this.playlist.findIndex(f=>f.song.playing) > -1;
-    },
-    duration: function() {
-      if (this.isPlaying) {
-        return (this.playlist[this.current] && this.playlist[this.current].song.duration) || '--';
-      }
-
-      return '--';
-    },
-    song: function() {
-      if (this.isPlaying) {
-        return this.playlist[this.current];
-      }
-
-      return '--';
-    },
-    baridth: function() {
-      return ((this.currentTime*100)/this.duration) >= 100 ? 100 : ((this.currentTime*100)/this.duration);
-    }
-  },
-  methods: {
-    add: function(s, p, d) {
-      if (p !== false) p = true;
-      if (d !== false) d = 0;
-      if (this.playlist.findIndex(f=>f.song.id==s.song.id) == -1) {
-        this.playlist.push(s);
-        if (p) this.current = this.playlist.length-1;
-      } else {
-        if (p) this.current = this.playlist.findIndex(f=>f.song.id==s.song.id);
-      }
-
-      if (p) {
-        this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play", d);
-      }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    select: function(i) {
-      if (this.current !== i) { 
-        this.pause();
-        this.current = i;
-        this.playlist[this.current].song.playing = true;
-        this.player.jPlayer('setMedia', this.playlist[i]).jPlayer("play");
-      } else {
-        this.pause();
-      }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    remove: function(index) {
-      if (this.playlist[index].song.playing) {
-        if(!this.next()){
-          this.stop();
-        }
-      }
-      this.playlist.splice(index, 1);
-      this.current = this.playlist.findIndex(f=>{return f.song.playing});
-    },
-    stop: function() {
-      this.playlist[this.current].song.playing = false;
-      this.current = false;
-      this.player.jPlayer('stop');
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    play: function() {
-      if (this.current !== false && this.current > -1) {
-        if (this.isPlaying) {
-          this.player.jPlayer('pause');
-          this.playlist[this.current].song.playing = false;
-        } else {
-          this.playlist[this.current].song.playing = true;
-          this.player.jPlayer("play");
-        }
-      }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    pause: function(force) {
-      if (this.current !== false && this.current > -1) {
-        if (this.isPlaying) {
-          this.player.jPlayer("pause");
-          this.playlist[this.current].song.playing = false;
-        } else {
-          this.play();
-        }
-      }
-      localStorage.setItem('player.list', JSON.stringify(this.playlist));
-    },
-    next: function() {
-      if (this.current !== false && this.current > -1 && this.current +1 <= this.playlist.length-1) {
-        this.pause();
-        this.current+=1;
-        this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play");
-        this.play();
-        localStorage.setItem('player.list', JSON.stringify(this.playlist));
-        return true;
-      }
-      return false;
-    },
-    previous: function() {
-      if (this.current !== false && this.current > -1 && this.current-1 >= 0) {
-        this.pause();
-        this.current-=1;
-        this.player.jPlayer('setMedia', this.playlist[this.current]).jPlayer("play");
-        this.play();
-        localStorage.setItem('player.list', JSON.stringify(this.playlist));
-        return true;
-      }
-      return false;
-    },
-    mute: function(muted) {
-      if (muted !== false && muted !== true) muted = true;
-      this.player.jPlayer(muted ? 'mute': 'unmute');
-      this.muted = muted;
-    },
-    selectedTime: function(event) {
-      var selected_time = (event.offsetX * 100) / event.srcElement.offsetWidth;
-      selected_time = (selected_time * this.duration) / 100;
-      this.player.jPlayer('play', selected_time);
-    },
-    selectVolume : function(event) {
-      var selected_volume = (event.offsetX * 100) / event.srcElement.offsetWidth;
-      selected_volume = (selected_volume * 1) / 100;
-      this.player.jPlayer('volume', selected_volume);
-      localStorage.setItem('player.volume', selected_volume);
-    },
-    setRepeat: function() {
-      this.repeat = !this.repeat;
-      localStorage.setItem('player.repeat', this.repeat);
-    },
-    setShuffle: function() {
-      if (this.playlist.length > 0) {
-        this.playlist = this.playlist.shuffle();
-        this.shuffle = !this.shuffle;
-        localStorage.setItem('player.shuffle', this.shuffle);
-        localStorage.setItem('player.list', JSON.stringify(this.playlist));
-      }
-    },
-    cleanList: function() {
-      this.shuffle = true;
-      this.setShuffle();
-
-      if (this.current !== false && this.current > -1) {
-        this.stop();
-        this.playlist = [];
-        localStorage.removeItem('player.list');
-      }
-    }
-  },
-  template: document.getElementById('music-player-template').innerHTML
-});
+Vue.component('a-player', VueAPlayer.APlayer);
 
 Vue.component('music-header', {
   mixins: [mixin],
@@ -759,7 +491,38 @@ const musicApp = new Vue({
     },
     query: ""
   },
+  watch: {
+    playlist: {
+      handler: function() {
+        localStorage.setItem('player.list', JSON.stringify(this.playlist));
+      },
+      deep: true
+    }
+  },
+  methods: {
+    removeClick: function(obj, id) {
+      this.playlist.splice(id, 1);
+    },
+    addSong: function(song) {
+      this.playlist.push({
+        name: song.filename,
+        artist: song.tags.band,
+        url: '/song/'+song.id+'.mp3',
+        cover: song.albumurl || '/img/a2.png', // prettier-ignore
+      });
+    },
+    setSong: function(evt, song) {
+      if (this.state.songs.find(f=>f.playing)) {
+        this.state.songs.find(f=>f.playing).playing = false;
+      }
+      this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
+    }
+  },
   beforeMount: function() {
+    if (eval(localStorage.getItem('player.list'))) {
+      this.playlist = eval(localStorage.getItem('player.list'));
+    };
+
     axios.get('/songs/list/', {
       params: {
 
@@ -769,25 +532,43 @@ const musicApp = new Vue({
         this.state.songs = response.data.list;
         this.state.genres = response.data.genres;
         this.state.artists = response.data.artists;
-
-        (eval(localStorage.getItem('player.list')) || []).forEach((e, i)=> {
-          if (this.state.songs.find((s)=>s.id==e.song.id)) {
-            var songToPlay = this.state.songs.find((s)=>s.id==e.song.id);
-            songToPlay.playing = e.song.playing;
-            musicApp.$refs.player.add({
-              title: songToPlay.name || songToPlay.filename,
-              artist: songToPlay.artist || songToPlay.tags.band,
-              album: songToPlay.album,
-              mp3: '/song/'+songToPlay.id+'.mp3',
-              poster: "",
-              song: songToPlay
-            }, songToPlay.playing);
-          }
-        });
       }
     })
     .catch(function (error) {
       
+    });
+  },
+  mounted: function() {
+    var that = this;
+    $('body').on('keydown', function(evt) {
+      if (evt.target == document.body) {
+        if ((evt.keyCode || evt.which) == 32) {
+          that.$refs.player.play();
+          evt.preventDefault();
+        }
+        if ((evt.keyCode || evt.which) == 37) { // left
+          that.$refs.player.skipBack();
+          evt.preventDefault();
+        } 
+
+        if ((evt.keyCode || evt.which) == 39 ) { // right
+          that.$refs.player.skipForward();
+          evt.preventDefault();
+        }
+
+        if ((evt.keyCode || evt.which) == 76) { // L key
+          that.$refs.player.toggleList();
+          evt.preventDefault();
+        }
+        if ((evt.keyCode || evt.which) == 38) { // Up
+          that.$refs.player.volume = that.$refs.player.volume + (that.$refs.player.volume>=1?0:0.1);
+          evt.preventDefault();
+        }
+        if ((evt.keyCode || evt.which) == 40) { // down
+          that.$refs.player.volume = that.$refs.player.volume-(that.$refs.player.volume<=0?0:0.1);
+          evt.preventDefault();
+        }
+      }
     });
   }
 });

@@ -20,10 +20,10 @@
     <script src="/js/plugins/sweetalert2.min.js"></script>
 
     <script type="text/javascript" src="/js/vue.js"></script>
-    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+    <script src="/js/vue-router.js"></script>
     <script src="/js/components/star-rating.min.js"></script>
+    <script src="/js/components/Aplayer.min.js"></script>
 
-    <?php $this->partial('components/music-player'); ?>
     <?php $this->partial('index/index'); ?>
     <?php $this->partial('playlist/index'); ?>
     <?php $this->partial('playlist/info'); ?>
@@ -44,7 +44,7 @@
                 <section class="vbox">
                   <router-view></router-view>
                   <footer class="footer bg-dark" v-if="player.available">
-                    <music-player :playlist="playlist" ref="player"></music-player>
+                    <a-player :audio="playlist" :lrcType="3" @remove="removeClick" @playing="setSong" ref="player"/>
                   </footer>
                 </section>
               </section> <!-- side content -->
