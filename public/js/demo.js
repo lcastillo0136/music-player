@@ -540,8 +540,11 @@ const musicApp = new Vue({
     },
     saveCount: function() {
       if (this.$refs.player.currentPlayed > 0.750 && !this.song.counted) {
-        axios.get('/song/end/'+this.song.id).then(()=> {
-          this.song.counted = true;
+        axios.get('/song/end/'+this.song.id).then((count_response)=> {
+          if(count_response.success) {
+            this.song.counted = true;
+            this.songs.no_plays = count_response.count;
+          }
         });
       }
     }
