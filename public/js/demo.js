@@ -74,7 +74,11 @@ var mixin = {
       return s;
     },
     playSong: function(songToPlay, playNow) {
+      if (playNow === true) {
+        musicApp.playSong(songToPlay);
+      } else {
         musicApp.addSong(songToPlay);
+      }
     }
   }
 };
@@ -134,7 +138,17 @@ const Discovery = {
       player: {
         available: true
       },
-      playlist: []
+      playlist: [],
+      loading: false
+    }
+  },
+  methods: {
+    refresh: function() {
+      this.loading = true;
+      axios.get('/songs/update').then(()=>{
+        this.loading = false;
+      });
+
     }
   },
   computed: {
@@ -209,13 +223,7 @@ const Playlist = {
       const that = this;
       if (this.selected.action != '') {
         this.songsTable.slice(0).forEach(f=>{
-          musicApp.$refs.player.add({
-            title: f.filename,
-            artist: f.tags.band,
-            mp3: '/song/'+f.id+'.mp3',
-            poster: '',
-            song: f
-          }, false);
+          musicApp.addSong(f);
         });
         this.selected.action = '';
       }
@@ -292,7 +300,7 @@ const InfoSong = {
     song: {
       deep:true,
       handler: function() {
-        this.song.file_path = this.folder + '\\' + this.song.artist.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.album.replace(/[\\\/\:\*\.\?"<>|']/g, '') + '\\' + this.song.artist + ' - ' + this.song.track_number + ' - ' +this.song.name + (this.song.name.indexOf('.mp3') > -1 ? '' : '.mp3');
+        this.song.file_path = this.folder + '\\' + this.song.artist.replace(/[\\\/\:\*\.\?"“”’<>|']/g, '') + '\\' + this.song.album.replace(/[\\\/\:\*\.\?""“”’<>|']/g, '') + '\\' + this.song.artist.replace(/[""“”’]/g,'') + ' - ' + this.song.track_number + ' - ' +this.song.name.replace(/[""“”’]/g,'') + (this.song.name.indexOf('.mp3') > -1 ? '' : '.mp3');
       }
     },  
     '$route' (to, from) {
@@ -499,6 +507,11 @@ const musicApp = new Vue({
       deep: true
     }
   },
+  computed: {
+    song: function(){
+      return this.state.songs.find(s=>s.playing);
+    }
+  },
   methods: {
     removeClick: function(obj, id) {
       this.playlist.splice(id, 1);
@@ -511,11 +524,26 @@ const musicApp = new Vue({
         cover: song.albumurl || '/img/a2.png', // prettier-ignore
       });
     },
+    playSong: function(song) {
+      this.addSong(song);
+      this.$refs.player.switch(this.$refs.player.orderList.length-1);
+      this.$refs.player.play();
+    },
+    clearList: function() {
+      this.playlist = [];
+    },
     setSong: function(evt, song) {
       if (this.state.songs.find(f=>f.playing)) {
         this.state.songs.find(f=>f.playing).playing = false;
       }
-      this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
+      if (this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url)) this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
+    },
+    saveCount: function() {
+      if (this.$refs.player.currentPlayed > 0.750 && !this.song.counted) {
+        axios.get('/song/end/'+this.song.id).then(()=> {
+          this.song.counted = true;
+        });
+      }
     }
   },
   beforeMount: function() {
@@ -543,7 +571,7 @@ const musicApp = new Vue({
     $('body').on('keydown', function(evt) {
       if (evt.target == document.body) {
         if ((evt.keyCode || evt.which) == 32) {
-          that.$refs.player.play();
+          that.$refs.player.toggle();
           evt.preventDefault();
         }
         if ((evt.keyCode || evt.which) == 37) { // left

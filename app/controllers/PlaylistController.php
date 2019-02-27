@@ -106,7 +106,7 @@ class PlaylistController extends ControllerBase {
             $infoSong->modification_date = date("Y-m-d H:i:s");
             $infoSong->save();
           } else {
-            $sendback_response["message"] = "No se pudo mover el archivo:" + $songObj->path;
+            $sendback_response["message"] = "No se pudo mover el archivo:" . $songObj->path;
           }
         } else {
           $sendback_response["success"] = true;
@@ -147,7 +147,7 @@ class PlaylistController extends ControllerBase {
         }
 
       } else {
-        $sendback_response["message"] = "No se pudo guardar la informacion:" + json_encode($songObj);
+        $sendback_response["message"] = "No se pudo guardar la informacion:" . json_encode($songObj);
       }
     }
 

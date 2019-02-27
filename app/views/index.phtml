@@ -44,7 +44,7 @@
                 <section class="vbox">
                   <router-view></router-view>
                   <footer class="footer bg-dark" v-if="player.available">
-                    <a-player :audio="playlist" :lrcType="3" @remove="removeClick" @playing="setSong" ref="player"/>
+                    <a-player :audio="playlist" :lrcType="3" @remove="removeClick" @playing="setSong" v-on:cct="saveCount" v-on:cpl="clearList" ref="player"/>
                   </footer>
                 </section>
               </section> <!-- side content -->

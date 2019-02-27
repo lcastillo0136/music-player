@@ -37,7 +37,7 @@
                   <div class="pos-rlt">
                     <div class="item-overlay opacity r r-2x bg-black" v-bind:class="{'active': s.playing}">
                       <div class="center text-center m-t-n"> 
-                        <a href="#" v-on:click.stop.prevent="playSong(s)">
+                        <a href="#" v-on:click.stop.prevent="playSong(s, true)">
                           <i class="fa fa-play-circle i-2x" v-if="!s.playing"></i>
                           <i class="fa fa-pause i-2x" v-if="s.playing"></i>
                         </a> 
@@ -97,7 +97,7 @@
                   <tbody>
                     <tr v-for="(s, index) in songsTable" v-if="index >= ((selected.page-1) * 18) && index < (selected.page * 18)" :key="index">
                       <td style="vertical-align: middle;">
-                        <a href="#" v-on:click.stop.prevent="playSong(s)">
+                        <a href="#" v-on:click.stop.prevent="playSong(s, true)">
                           <i class="fa fa-play-circle" v-if="!s.playing"></i>
                           <i class="fa fa-pause" v-if="s.playing"></i>
                         </a>
