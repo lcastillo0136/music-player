@@ -536,7 +536,15 @@ const musicApp = new Vue({
       if (this.state.songs.find(f=>f.playing)) {
         this.state.songs.find(f=>f.playing).playing = false;
       }
-      if (this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url)) this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
+      if (this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url)) {
+        this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
+        if(Notification.permission == "granted") {
+          new Notification(this.song.tags.band, {
+            icon: this.song.albumurl || 'https://musicplayer.local/img/a2.png',
+            body: this.song.filename
+          });
+        }
+      }
     },
     saveCount: function() {
       if (this.$refs.player.currentPlayed > 0.750 && !this.song.counted) {
@@ -571,6 +579,11 @@ const musicApp = new Vue({
   },
   mounted: function() {
     var that = this;
+    Notification.requestPermission().then(function(response) {
+      if (response == "granted") {
+
+      }
+    });
     $('body').on('keydown', function(evt) {
       if (evt.target == document.body) {
         if ((evt.keyCode || evt.which) == 32) {
