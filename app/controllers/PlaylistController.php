@@ -18,8 +18,6 @@ class PlaylistController extends ControllerBase {
 
     $tags_query = $this->modelsManager->createQuery("SELECT DISTINCT substring_index(substring_index(s.tags, ',', a.id), ',', -1) as tag FROM songs s JOIN songs a ON char_length(s.tags) - char_length(replace(s.tags, ',', '')) >= a.id - 1 ORDER BY tag");
     $tags_result = $tags_query->execute();
-
-
     $getID3 = new getID3;
     $ThisFileInfo = $getID3->analyze($infoSong->file_path);
     getid3_lib::CopyTagsToComments($ThisFileInfo);
@@ -35,6 +33,16 @@ class PlaylistController extends ControllerBase {
     $this->view->data = $song_data;
     $this->view->musicFolder = addslashes(realpath($this->config->application->musicFolder));
 
+    $sendback_response = array("success"=>false);
+
+    $sendback_response["info"] = $infoSong;
+    $sendback_response["tags"] = $tags_result;
+    $sendback_response["data"] = $song_data;
+    $sendback_response["musicFolder"] = realpath($this->config->application->musicFolder);
+    $sendback_response["success"] = true;
+
+    echo json_encode($sendback_response,JSON_PARTIAL_OUTPUT_ON_ERROR);
+    die();
   }
 
   public function deleteSongAction($id) {
@@ -98,7 +106,7 @@ class PlaylistController extends ControllerBase {
             $infoSong->modification_date = date("Y-m-d H:i:s");
             $infoSong->save();
           } else {
-            $sendback_response["message"] = "No se pudo mover el archivo:" + $songObj->path;
+            $sendback_response["message"] = "No se pudo mover el archivo:" . $songObj->path;
           }
         } else {
           $sendback_response["success"] = true;
@@ -139,7 +147,7 @@ class PlaylistController extends ControllerBase {
         }
 
       } else {
-        $sendback_response["message"] = "No se pudo guardar la informacion:" + json_encode($songObj);
+        $sendback_response["message"] = "No se pudo guardar la informacion:" . json_encode($songObj);
       }
     }
 

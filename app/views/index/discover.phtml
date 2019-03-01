@@ -1,6 +1,6 @@
 <div id="discover-container">
   <a href="#" class="pull-right text-muted m-t" data-toggle="class:fa-spin" v-on:click.stop.prevent="refresh">
-    <i class="icon-refresh i-lg inline" id="refresh"></i>
+    <i class="icon-refresh i-lg inline" id="refresh" :class="{'fa-spin': loading}"></i>
   </a> 
                   
   <h2 class="font-thin m-b">
@@ -27,7 +27,7 @@
               <i class="fa fa-star" v-bind:class="{'fa-star-o text-muted': s.rating < 5}"></i> 
             </div>
             <div class="center text-center m-t-n"> 
-              <a href="#" v-on:click.stop.prevent="playSong(s)">
+              <a href="#" v-on:click.stop.prevent="playSong(s, true)">
                 <i class="icon-control-play i-2x" v-if="!s.playing"></i>
                 <i class="icon-control-pause i-2x" v-if="s.playing"></i>
               </a> 
@@ -47,7 +47,7 @@
           </a>
         </div>
         <div class="padder-v"> 
-          <a :href="'/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
+          <a :href="'#/songs/'+s.id" class="text-ellipsis">{{s.filename}}</a> 
           <a href="#" class="text-ellipsis text-xs text-muted">{{s.tags.band}}</a> 
         </div>
       </div>
