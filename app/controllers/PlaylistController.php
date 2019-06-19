@@ -169,8 +169,10 @@ class PlaylistController extends ControllerBase {
     //$infoSong->save();
 
     header('Content-Type: audio/mpeg, audio/x-mpeg, audio/x-mpeg-3, audio/mpeg3');
-    header('Content-Disposition: filename="song.mp3"');
-    readfile($infoSong->file_path);exit;
+    header('Content-Disposition: filename="'.$infoSong->artist.'-'.$infoSong->track_number.'-'.$infoSong->name.'.mp3"');
+    readfile($infoSong->file_path);
+    
+    die();
   }
 
   public function countAction($id) {

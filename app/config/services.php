@@ -135,3 +135,7 @@ $di->setShared('session', function () {
 
     return $session;
 });
+
+$di->setShared('filter', function() {
+    return new \Phalcon\Filter();
+});

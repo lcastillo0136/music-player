@@ -539,21 +539,22 @@ const musicApp = new Vue({
       if (this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url)) {
         this.state.songs.find(f=>'/song/'+f.id+'.mp3'==song.url).playing = true;
         if(Notification.permission == "granted") {
-          new Notification(this.song.tags.band, {
+          var n = new Notification(this.song.tags.band, {
             icon: this.song.albumurl || 'https://musicplayer.local/img/a2.png',
             body: this.song.filename
           });
+          setTimeout(n.close.bind(n), 4000);
         }
       }
     },
     saveCount: function() {
       if (this.$refs.player.currentPlayed > 0.750 && !this.song.counted) {
-        axios.get('/song/end/'+this.song.id).then((count_response)=> {
-          if(count_response.success) {
-            this.song.counted = true;
-            this.songs.no_plays = count_response.count;
-          }
-        });
+        // axios.get('/song/end/'+this.song.id).then((count_response)=> {
+        //   if(count_response.success) {
+        //     this.song.counted = true;
+        //     this.songs.no_plays = count_response.count;
+        //   }
+        // });
       }
     }
   },

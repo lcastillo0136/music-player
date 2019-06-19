@@ -41,9 +41,9 @@
               </a> 
             </div>
           </div> 
-          <a href="#" style="overflow: hidden;display: block;">
+          <a href="#" style="overflow: hidden;display: block;height: 420px;position: relative;z-index: -1">
             <img src="/img/p1.jpg" alt="" class="r r-2x img-full" v-bind:class="{'hide': (s.albumurl && s.albumurl != '')}">
-            <img v-bind:src="s.albumurl" onerror="this.src='/img/p1.jpg';this.style='';" alt="" class="r r-2x img-full" style="height: 359px;width: auto;margin-left: -25%;" v-bind:class="{'hide': (s.albumurl == '' || !s.albumurl)}">
+            <img v-bind:src="s.albumurl" onerror="this.src='/img/p1.jpg';this.style='';" alt="" class="r r-2x img-full" style="width: auto;min-height: 100%;min-width: auto;transform: translate(-50%, -50%);position: absolute;top: 50%;left: 50%;" v-bind:class="{'hide': (s.albumurl == '' || !s.albumurl)}">
           </a>
         </div>
         <div class="padder-v"> 
